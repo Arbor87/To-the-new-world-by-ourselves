@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>philosopy-game</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;  
+        background: #f0f0f0;
+      }
+      #loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: Arial, sans-serif;
+        font-size: 18px;
+        color: #666;
+      }
+      /* 3D预览容器样式 */
+      #model-preview-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      #start-game-btn {
+        position: absolute;
+        bottom: 10%;
+        padding: 15px 30px;
+        font-size: 20px;
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+        font-weight: bold;
+        z-index: 9001;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+      }
+      #start-game-btn.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      #model-preview-container.hidden {
+        display: none;
+      }
+      #preview-info {
+        position: absolute;
+        top: 5%;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 0 20px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        z-index: 9001;
+      }
+      /* 添加提示文本样式 */
+      #interaction-hint {
+        position: absolute;
+        bottom: 18%;
+        color: rgba(255, 255, 255, 0.8);
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+        z-index: 9001;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      }
+    </style>
+</head>
+<body>
+    <!-- 3D模型预览容器 -->
+    <div id="model-preview-container">
+        <div id="preview-info">
+            <p>站在黑暗中，冰河流淌</p>
+            <p>现在，让掌心的微光，去触碰</p>
+            <p>散落的第一枚碎片</p>
+            <p>—— 启幕</p>
+        </div>
+        <div id="loading">正在加载3D模型...</div>
+        <div id="interaction-hint">按住鼠标并移动，或转动鼠标滚轮开始探索</div>
+        <!-- <button id="start-game-btn">进入游戏</button> -->
+    </div>
+
+    <!-- 初始黑幕 -->
+    <div class="black-mask"></div>
+    
+    <!-- 开端文字 -->
+    <div class="start-text"> 
+        
+        <p class="note">(点击任意位置开始游戏)</p>
+    </div>
+    
+    <!-- 冷漠离开选项后续弹窗 -->
+    <div class="quiz-modal" id="envyEndingModal">
+        <div class="quiz-content" id="envyEndingContent">
+            <!-- 文字内容 -->
+            <div class="text-content" id="envyEndingText">
+                冰河暗涌，你一人孤独前行，耳畔边仍然回荡着惊叫声，树鬼摇曳，无数利枝像是要挑断你那傲人的梁骨，你为什么抛下ta:
+            </div>
+            
+            <!-- 选项 -->
+            <div class="quiz-options" id="envyOptions">
+                <div class="quiz-option" id="envyOptionA">A. 认为ta是一个麻烦</div>
+                <div class="quiz-option" id="envyOptionB">B. 妒忌ta的笑容，妒忌ta的勇敢，妒忌ta拥有你渴望的一切</div>
+                <div class="quiz-option" id="envyOptionC">C. 你想逃离</div>
+            </div>
+            
+            <!-- 返回按钮 -->
+            <button class="back-button" id="envyBackButton">返回前面文字</button>
+        </div>
+    </div>
+    
+    <!--游戏初始界面-->
+    <div class="start-game">
+        <p style="color: black;">控制小人去触碰光点</p>
+        <div class="water-ripple"></div>
+        <div class="target-spot"></div>
+        <div class="ground0"></div>
+        <div class="player"></div>
+    </div>
+
+    <!-- 游戏界面 -->
+    <div class="game-container">
+        <div class="background"></div>
+        <div class="water-ripple"></div>
+        <div class="ground"></div> <!-- 地面 -->
+        <div class="player"></div>
+        
+        <!-- 右上角进度圈 -->
+        <div class="progress-circles">
+            <div class="circle"></div>
+            <div class="circle"></div>
+            <div class="circle"></div>
+        </div>
+        
+        <!-- 操控按钮（含跳跃） -->
+        <div class="controls">
+            <button class="btn" id="leftBtn">←</button>
+            <button class="jump-btn" id="jumpBtn">↑</button>
+            <button class="btn" id="rightBtn">→</button>
+        </div>
+    </div>
+
+    <!-- 第一个问答界面 -->
+    <div class="quiz-modal" id="quizModal">
+        <div class="quiz-content">
+            <!-- 文字内容界面 -->
+            <div class="text-content" id="textContent">
+                <p>你听见风声，水声，鸟鸣，看见鬼魅般的光影穿梭在枝桠间。</p>
+                <p>微弱的萤火是黑夜的眼睛，握在手心却如河流淌。</p>
+                <p>不要害怕，穿过这片桦树林，你会相信外面是新世界吗？</p>
+            </div>
+            
+            <!-- 选项界面 -->
+            <div class="quiz-options" id="quizOptions">
+                <div class="quiz-option" id="optionA">A. 相信</div>
+                <div class="quiz-option" id="optionB">B. 不相信</div>
+            </div>
+            
+            <!-- 返回按钮 -->
+            <button class="back-button" id="backButton">返回文字</button>
+        </div>
+    </div>
+    
+    <!-- 第二个问答界面 -->
+    <div class="quiz-modal" id="quizModal2">
+        <div class="quiz-content">
+            <!-- 文字内容界面 -->
+            <div class="text-content" id="textContent2">
+                <p>天色近暗，你停下脚步，坐在裸露的大树根系上，你看见一个人走来，雾岚弥漫，你怎么也看不清TA的面容，TA问你一个人吗？要一起走吗？</p>
+            </div>
+            
+            <!-- 选项界面 -->
+            <div class="quiz-options" id="quizOptions2">
+                <div class="quiz-option" id="optionA2">A. 可以</div>
+                <div class="quiz-option" id="optionB2">B. 不可以</div>
+            </div>
+            
+            <!-- 返回按钮 -->
+            <button class="back-button" id="backButton2">返回文字</button>
+        </div>
+    </div>
+
+    <!-- 新剧情文字弹窗 -->
+    <div class="quiz-modal" id="newStoryModal">
+        <div class="quiz-content" id="newStoryContent">
+            <div class="text-content" id="newStoryText">
+                TA与你并肩而行，谈笑风生，你攥紧手心，风过发梢，刺肤寒冷如蛀虫侵蚀骨肉，天色将晚，只剩下莎莎的落叶响。突然，一声惊叫让你冷汗直冒--TA没看路，一脚滑进树洞之中。
+            </div>
+        </div>
+    </div>
+    
+    <!-- 新选项弹窗 - 问题和选项整合在同一界面 -->
+    <div class="quiz-modal" id="newOptionsModal">
+        <div class="quiz-content" id="newOptionsContent">
+            <!-- 文字内容 -->
+            <div class="text-content" id="newOptionsText">
+                你站在树洞边缘，向下望去，黑暗中隐约传来呼救声。你决定...
+            </div>
+            
+            <!-- 选项 -->
+            <div class="quiz-options" id="newOptions">
+                <div class="quiz-option" id="newOptionA">A. 集齐荧光拯救TA</div>
+                <div class="quiz-option" id="newOptionB">B. 冷漠离开</div>
+            </div>
+            
+            <!-- 返回按钮 -->
+            <button class="back-button" id="newBackButton">返回前面文字</button>
+        </div>
+    </div>
+    
+    <!-- 问题3选择A后的新弹窗 -->
+    <div class="quiz-modal" id="question3AModal">
+        <div class="quiz-content" id="question3AContent">
+            <!-- 文字内容 -->
+            <div class="text-content" id="question3AText">
+                TA并无大碍，为了感谢你TA提出一些逃离森林的建议，你看着ta朦胧的脸，想到自己被困森林却无法走出，于是点头，ta却问: 
+                你认为幸福的秘诀是什么？
+            </div>
+              
+            <!-- 选项 -->
+            <div class="quiz-options" id="question3AOptions">
+                <div class="quiz-option" id="question3AOptionA">A. 在朋友间找到归属感</div>
+                <div class="quiz-option" id="question3AOptionB">B. 不要想太多</div>
+                <div class="quiz-option" id="question3AOptionC">C. 珍惜当下</div>
+            </div>
+            
+            <!-- 返回按钮 -->
+            <button class="back-button" id="question3ABackButton">返回文字</button>
+        </div>
+    </div>
+    
+    <!-- 问题3A后续新弹窗（收集光点后显示） -->
+    <div class="quiz-modal" id="question3AProceedModal">
+        <div class="quiz-content" id="question3AProceedContent">
+            <!-- 文字内容 -->
+            <div class="text-content" id="question3AProceedText">
+                你认为这样的问题莫名其妙，但TA又说"我在寻找我的朋友们，你知道吗？我被困这里数十年，满眼都是郁郁桦树，似乎待在这里也没什么不好，走出去也会有阳光照不见的地方，你要和我一起走吗？"
+                <br><br>
+                你犹豫不决，前进的意义变的模糊，你选择:
+            </div>
+              
+            <!-- 选项 -->
+            <div class="quiz-options" id="question3AProceedOptions">
+                <div class="quiz-option" id="question3AProceedOptionA">A. 拉起ta的手和ta寻找朋友</div>
+                <div class="quiz-option" id="question3AProceedOptionB">B. 你拒绝了ta，决定自己去碰运气</div>
+            </div>
+            
+
+        </div>
+    </div>
+
+    <!-- 新剧情分支弹窗 - 选择拉起ta的手后显示 -->
+    <div class="quiz-modal" id="forestJourneyModal">
+        <div class="quiz-content" id="forestJourneyContent">
+            <!-- 文字内容 -->
+            <div class="text-content" id="forestJourneyText">
+                <p>没有风声，没有水流，没有鸟鸣，原始森林之中，只有植物在慢慢呼吸，蒸出的水汽像是泪滴，垂挂在唇边，你踏上寻找朋友的路上，孤单似乎离你越来越远，但幸福的秘诀却让你重新思考，一路上，你在ta的帮助之下结识了同样被困住的人，他们的笑容，他们的温度，都给你足够的勇气去面对一望无际的森林。</p>
+                <p><br></p>
+                <p>ta重新问你，幸福的秘诀是什么？</p>
+                <p><br></p>
+                <p>但这回的结果有所不同:</p>
+            </div>
+              
+            <!-- 选项 -->
+            <div class="quiz-options" id="forestJourneyOptions">
+                <div class="quiz-option" id="forestJourneyOptionA">A. 拥有去抓住幸福的勇气</div>
+                <div class="quiz-option" id="forestJourneyOptionB">B. 逃离孤独，靠近火源</div>
+            </div>
+            
+            <!-- 返回按钮 -->
+            <button class="back-button" id="forestJourneyBackButton">返回文字</button>
+        </div>
+    </div>
+
+    <!-- 假结局2弹窗 -->
+    <div id="fakeEnding2Modal" class="quiz-modal">
+        <div class="quiz-content">
+            <div class="text-content" id="fakeEnding2Text">
+                <p>你暂时决定留在森林里，日复一日，日复一日，你看见ta的背影消失在树影里，像是一场梦，也许你可能下一秒就会找到出口，也或许是明天，也或许是永远都在寻找的道路之上，旧世界与新世界的脉络是如此的坚强而脆弱，但无论在哪里，你都仅仅是你</p>
+                <p style="font-weight: bold; text-align: center; margin-top: 30px;">恭喜你打出假结局2--【旧世界？】</p>
+            </div>
+            <div class="back-button" id="fakeEnding2BackButton">
+                <span>重新开始</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 最终文字界面弹窗 -->
+    <div id="finalTextModal" class="quiz-modal">
+        <div class="quiz-content">
+            <div class="text-content" id="finalText">
+                <p>森林的黎明似乎触手可及，硕大的枝叶不足以遮挡阳光的直射，你开始好奇ta到底是谁？你想凭借着阳光去看清，但被发现:</p>
+                <p>ta好像在笑，问你:你想知道吗？</p>
+            </div>
+            <div class="quiz-options" id="finalTextOptions">
+                <div class="quiz-option" id="finalTextOptionA">
+                    <span>A.想</span>
+                </div>
+                <div class="quiz-option" id="finalTextOptionB">
+                    <span>B.不想</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- 假结局弹窗 -->
+    <div class="quiz-modal" id="badEndingModal">
+        <div class="quiz-content" id="badEndingContent">
+            <div class="text-content" id="badEndingText">
+                亲爱的，无论是你的高警惕性还是过人的智慧，我都相信你有足够的勇气与能力独自走出森林。<br><br>
+                祝你好运。<br><br>
+                恭喜你打出假结局1--【森林与独骑士】
+            </div>
+            <button class="back-button" id="badEndingBackButton">重新开始</button>
+        </div>
+    </div>
+    
+    <!-- 冷漠离开后续弹窗（冰河暗涌） -->
+    <div class="quiz-modal" id="envyEndingModal2">
+        <div class="quiz-content" id="envyEndingContent2">
+            <!-- 文字内容界面 -->
+            <div class="text-content" id="envyEndingText2">
+                你离开的脚步声在寂静的森林中格外清晰。黑暗里，你听到自己急促的呼吸声，心跳如鼓。<br><br>
+                为什么？为什么你会有这样的感觉？
+            </div>
+            
+            <!-- 选项界面 -->
+            <div class="quiz-options" id="envyOptions2">
+                <div class="quiz-option" id="envyOptionA2">A. 认为ta是一个麻烦</div>
+                <div class="quiz-option" id="envyOptionB2">B. 妒忌ta的笑容，妒忌ta的勇敢，妒忌ta拥有你渴望的一切</div>
+                <div class="quiz-option" id="envyOptionC2">C. 你想逃离</div>
+            </div>
+            
+            <!-- 返回按钮 -->
+            <button class="back-button" id="envyBackButton2">返回文字</button>
+        </div>
+    </div>
+    
+    <!-- 真结局2弹窗 -->
+    <div class="quiz-modal" id="trueEndingModal2">
+        <div class="quiz-content" id="trueEndingContent2">
+            <!-- 文字内容 -->
+            <div class="text-content" id="trueEndingText2">
+                <p>你手中的光芒似乎越来越少，留不住抓不住，选择已成过去式，结果似乎无足轻重，因为在你耳边回响着:</p>
+            </div>
+            
+            <!-- 选项界面 -->
+            <div class="quiz-options" id="trueEndingOptions">
+                <div class="quiz-option" id="trueEndingOptionA">A. 为什么不救我？</div>
+                <div class="quiz-option" id="trueEndingOptionB">B. 为什么不救我？</div>
+                <div class="quiz-option" id="trueEndingOptionC">C. 为什么不救我？</div>
+                
+                <!-- 红字部分 -->
+                <p class="red-text">我永远留在森林，你也是。</p>
+                
+                <!-- 额外内容 -->
+                <p>当你重新向树洞望去-</p>
+                <p>那是你。</p>
+                <p>那是你。</p>
+                <p>那是你。</p>
+                 
+                <!-- 结局标题 -->
+                <p class="ending-title">恭喜你打出真结局2--【为什么，走不出】</p>
+            </div>
+            
+            <!-- 返回按钮 -->
+            <button class="back-button" id="trueEnding2BackButton">重新开始</button>
+        </div>
+    </div>
+
+    <!-- 黑屏元素（用于选项A点击后的效果） -->
+    <div id="blackScreen" class="black-screen">
+        <p class="look-carefully">（凑近）仔细看一看</p>
+    </div>
+    
+    <!-- 真结局弹窗 -->
+    <div id="trueEndingModal" class="quiz-modal">
+        <div class="quiz-content" id="trueEndingContent">
+            <div class="text-content" id="trueEndingText">
+                <p>当阳光炙干第一滴泪水，当我们终于有勇气去抓住幸福，新世界就徐徐展开在眼前，我们看起来似乎坚不可摧，但又千疮百孔。哪里都是新世界，哪里又都是旧世界，只要我们迈出第一步，就可以抬眼去望一望。</p>
+                <p><br></p>
+                <p>你好，新世界。</p>
+                <p><br></p>
+                <p style="font-weight: bold; text-align: center; margin-top: 30px;">恭喜你打出真结局1--(致新世界)</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="test.js"></script>
+    <!-- 初始音频交互提示 -->
+    <div id="audioPrompt" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999;">
+        <div style="text-align: center; color: white; padding: 20px; background: rgba(0,0,0,0.7); border-radius: 10px;">
+            <h2>欢迎来到游戏</h2>
+            <p>点击下方按钮开始游戏并播放背景音乐</p>
+            <button id="startAudioBtn" style="margin: 20px; padding: 12px 28px; font-size: 18px; background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%); color: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s ease; font-weight: bold;">开始游戏</button>
+        </div>
+    </div>
+    
+    <!-- 音频标签 -->
+    <audio id="backgroundMusic" src="Trauma.mp3" loop="loop" controls="controls"></audio>
+    
+    <script type="module">
+      // 引入 Three.js 核心库和相关模块
+      import * as THREE from "three";
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+      import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+      
+      // 1. 初始化场景、相机、渲染器
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a1a2e);
+
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.set(5, 5, 5);
+      camera.lookAt(0, 0, 0);
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      
+      // 将渲染器添加到预览容器
+      document.getElementById('model-preview-container').appendChild(renderer.domElement);
+
+      // 2. 添加环境光和平行光
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(5, 5, 5);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.mapSize.width = 2048;
+      directionalLight.shadow.mapSize.height = 2048;
+      scene.add(directionalLight);
+
+      // 添加点光源增强模型细节
+      const pointLight = new THREE.PointLight(0xffffff, 0.3);
+      pointLight.position.set(-3, 3, 3);
+      scene.add(pointLight);
+
+      // 3. 加载 GLTF 模型
+      const loader = new GLTFLoader();
+      loader.load(
+        "scene.gltf",
+        (gltf) => {
+          const model = gltf.scene;
+
+          // 启用阴影
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          // 调整模型位置和大小
+          const box = new THREE.Box3().setFromObject(model);
+          const center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+
+          // 将模型居中
+          model.position.sub(center);
+
+          // 调整相机距离以适应模型大小
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const distance = maxDim * 1.5;
+          camera.position.set(distance, distance * 0.5, distance);
+          camera.lookAt(0, 0, 0);
+
+          scene.add(model);
+
+          // 隐藏加载提示，显示开始按钮和交互提示
+          document.getElementById("loading").style.display = "none";
+          document.getElementById("start-game-btn").classList.add("visible");
+          document.getElementById("interaction-hint").style.display = "block";
+
+          console.log("模型加载成功！");
+        },
+        (xhr) => {
+          const percent = Math.round((xhr.loaded / xhr.total) * 100);
+          document.getElementById("loading").textContent = `正在加载3D模型... ${percent}%`;
+          console.log(`正在加载3D模型... ${percent}%`);
+        },
+        (error) => {
+          document.getElementById("loading").textContent =
+            "模型加载失败，请检查控制台";
+          console.error("模型加载失败：", error);
+        }
+      );
+
+      // 4. 添加相机控制器（OrbitControls）
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.enableZoom = true;
+      controls.enableRotate = true;
+      controls.enablePan = true;
+
+      // 5. 渲染循环
+      function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // 6. 窗口大小自适应
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // 7. 游戏进入逻辑 - 检测鼠标交互
+      let isMouseDown = false;
+      let mouseMoved = false;
+      let wheelMoved = false;
+      let hasEnteredGame = false;
+      
+    //   const startBtn = document.getElementById('start-game-btn');
+      const previewContainer = document.getElementById('model-preview-container');
+      const interactionHint = document.getElementById('interaction-hint');
+      
+      // 鼠标按下事件
+      renderer.domElement.addEventListener('mousedown', () => {
+        if (!hasEnteredGame) {
+          isMouseDown = true;
+          mouseMoved = false; // 重置移动状态
+        }
+      });
+      
+      // 鼠标释放事件
+      document.addEventListener('mouseup', () => {
+        isMouseDown = false;
+      });
+      
+      // 鼠标移动事件
+      renderer.domElement.addEventListener('mousemove', (e) => {
+        if (!hasEnteredGame && isMouseDown && e.movementX !== 0 && e.movementY !== 0) {
+          mouseMoved = true;
+          // 提示用户松开鼠标进入游戏
+          interactionHint.textContent = "松开鼠标进入游戏";
+          
+          // 当鼠标移动后释放时进入游戏
+          document.addEventListener('mouseup', handleMouseRelease, { once: true });
+        }
+      });
+      
+      // 处理鼠标释放
+      function handleMouseRelease() {
+        if (mouseMoved && !hasEnteredGame) {
+          enterGame();
+        }
+      }
+      
+      // 鼠标滚轮事件
+      renderer.domElement.addEventListener('wheel', () => {
+        if (!hasEnteredGame) {
+          wheelMoved = true;
+          interactionHint.textContent = "再次滚动滚轮进入游戏";
+          
+          // 第二次滚动滚轮时进入游戏
+          renderer.domElement.addEventListener('wheel', () => {
+            if (wheelMoved && !hasEnteredGame) {
+              enterGame();
+            }
+          }, { once: true });
+        }
+      });
+      
+      // 按钮点击也保留入口
+      startBtn.addEventListener('click', enterGame);
+      
+      // 进入游戏函数
+      function enterGame() {
+        if (!hasEnteredGame) {
+          hasEnteredGame = true;
+          previewContainer.classList.add('hidden');
+          if (typeof initGame === 'function') {
+            initGame();
+          }
+        }
+      }
+    </script>
+    
+    <script>
+        // 当页面加载完成后
+        document.addEventListener('DOMContentLoaded', function() {
+            const audioPrompt = document.getElementById('audioPrompt');
+            const startAudioBtn = document.getElementById('startAudioBtn');
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            
+            // 点击开始按钮时播放音频
+            startAudioBtn.addEventListener('click', function() {
+                // 尝试播放音频
+                backgroundMusic.play().then(() => {
+                    console.log('音频播放成功');
+                    // 隐藏提示框
+                    audioPrompt.style.display = 'none';
+                }).catch(error => {
+                    console.warn('音频播放失败:', error);
+                    // 即使失败也隐藏提示框，让用户可以继续游戏
+                    audioPrompt.style.display = 'none';
+                    alert('背景音乐自动播放失败，请手动点击播放按钮');
+                });
+            });
+            
+            // 点击页面其他区域也可以尝试播放
+            audioPrompt.addEventListener('click', function(e) {
+                if (e.target === audioPrompt || e.target === audioPrompt.firstElementChild) {
+                    backgroundMusic.play().catch(error => {
+                        console.log('点击页面播放失败，需要点击按钮:', error);
+                    });
+                }
+            });
+        });
+        
+        // 游戏初始化函数（如果有其他初始化代码可以放在这里）
+        function initGame() {
+            // 如果test.js中有初始化函数，可以在这里调用
+            console.log('游戏初始化');
+        }
+    </script>
+  </body>
+
+</html>
