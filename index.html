@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>philosopy-game</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="format-detection" content="telephone=no">
+    <title>致新世界</title>
     <script type="importmap">
       {
         "imports": {
@@ -55,8 +55,8 @@
         transition: all 0.3s ease;
         font-weight: bold;
         z-index: 9001;
-        opacity: 0;
-        transform: translateY(20px);
+        opacity: 1;
+        transform: translateY(0);
         transition: opacity 0.5s ease, transform 0.5s ease;
       }
       #start-game-btn.visible {
@@ -87,6 +87,1017 @@
         text-shadow: 0 1px 3px rgba(0,0,0,0.5);
       }
     </style>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    width: 100%;
+    min-height: 100%;
+    background-color: #000;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    font-family: 'SimSun', serif;
+    overflow: hidden;
+    width: 100%;
+    min-height: 100vh;
+    min-height: var(--app-height, 100vh);
+    background-color: #000;
+    color: #fff;
+    touch-action: none;
+}
+
+/* 初始黑幕 */
+.black-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--app-height, 100vh);
+    background-color: #000;
+    z-index: 100;
+    opacity: 1;
+    transition: opacity 2.5s ease-out;
+}
+
+/* 开端文字 */
+.start-text {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 90;
+    text-align: center;
+    opacity: 1;
+    transition: opacity 1.5s ease-out;
+    pointer-events: auto;
+    width: 90%;
+    max-width: 500px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.start-text p {
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    margin-bottom: 1.8rem;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+    opacity: 1;
+    line-height: 1.6;
+}
+
+.start-text .note {
+    font-size: clamp(1rem, 3.5vw, 1.4rem);
+    color: #e0e0e0;
+    margin-top: 2rem;
+}
+
+.start-game {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: var(--app-height, 100vh);
+    opacity: 0;
+    transition: opacity 2s ease-in;
+    pointer-events: none;
+}
+
+.start-game.active{
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.start-game p {
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    margin-top: 5rem;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.7);
+    opacity: 1;
+    text-align: center;
+}
+
+.ground0 {
+    position: absolute;
+    bottom: 29%;
+    left: 45%;
+    width: 10%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.3);
+    z-index: 3;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.target-spot {
+  position: absolute;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff, #ffeb3b, #ff9800);
+    box-shadow: 0 0 15px #ffeb3b, 0 0 30px #ff9800;
+    z-index: 3;
+    animation: pulse 2s infinite alternate;
+    cursor: default;
+    left: 50%; /* 和人物初始水平位置对齐 */
+    bottom: 45%; /* 比人物初始位置高15%（30%+15%），需要跳跃才能碰到 */
+}
+
+/* 游戏容器 */
+.game-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: var(--app-height, 100vh);
+    opacity: 0;
+    transition: opacity 2s ease-in;
+    pointer-events: none;
+}
+
+/* 红色文字样式 */
+.red-text {
+    color: #ff0000;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+    margin: 20px 0;
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+}
+
+/* 结局标题样式 */
+.ending-title {
+    font-weight: bold;
+    margin-top: 30px;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+}
+
+/* 真结局选项样式 */
+.true-ending-options {
+    margin: 20px 0;
+}
+
+.true-ending-option {
+    margin: 10px 0;
+    font-size: clamp(1.1rem, 3.5vw, 1.6rem);
+    opacity: 0.9;
+}
+
+.game-container.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 背景 - 游戏界面使用动态背景 */
+.background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/first-pic.jpg') center/cover no-repeat;
+    filter: brightness(0.4) contrast(1.2);
+    z-index: 1;
+}
+
+/* 游戏界面根据进度改变背景 */
+.game-container.stage-1 .background {
+    background-image: url('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/first-pic.jpg');
+}
+
+.game-container.stage-2 .background {
+    background-image: url('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/second-pic.jpg');
+}
+
+.game-container.stage-3 .background {
+    background-image: url('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/third-pic.jpg');
+}
+
+/* 水波纹效果 */
+.water-ripple {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30%;
+    background: linear-gradient(to top, rgba(0, 30, 60, 0.5), transparent);
+    z-index: 2;
+    overflow: hidden;
+}
+
+.water-ripple::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
+    animation: ripple 15s linear infinite;
+}
+
+/* 地面 */
+.ground {
+    position: absolute;
+    bottom: 30%;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.3);
+    z-index: 3;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* 小人 */
+.player {
+    position: absolute;
+    bottom: 30%;
+    left: 50%;
+    width: 40px;
+    height: 60px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 30%, rgba(200, 220, 255, 0.6) 70%, transparent 100%);
+    border-radius: 50% 50% 40% 40%;
+    box-shadow: 0 0 20px rgba(200, 220, 255, 0.8),
+                0 0 40px rgba(150, 200, 255, 0.5);
+    z-index: 4;
+    transition: left 0.3s ease-out;
+}
+
+.player::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    filter: blur(5px);
+}
+
+/* 右上角进度圈 */
+.progress-circles {
+    position: absolute;
+    top: 5%;
+    right: 5%;
+    display: flex;
+    gap: 15px;
+    z-index: 5;
+}
+
+.circle {
+    width: 30px;
+    height: 30px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    transition: all 0.5s ease;
+    overflow: hidden;
+}
+
+.circle.filled {
+    background: linear-gradient(135deg, #87ceeb, #ffffff);
+    box-shadow: 0 0 15px rgba(135, 206, 235, 0.8);
+    border-color: #ffffff;
+}
+
+/* 光点 */
+.light-spot {
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff, #ffeb3b, #ff9800);
+    box-shadow: 0 0 15px #ffeb3b, 0 0 30px #ff9800;
+    z-index: 3;
+    animation: pulse 2s infinite alternate;
+    cursor: default;
+}
+
+/* 问答界面 */
+.quiz-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--app-height, 100vh);
+    background: rgba(0, 0, 0, 0.8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow-y: auto;
+    padding: max(18px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1s ease;
+}
+
+/* 问题1、问题2和问题TA与你并肩而行，谈笑风生用first-pic */
+#quizModal, #quizModal2, #newStoryModal {
+    background-image: url('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/first-pic.jpg');
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: overlay;
+}
+
+/* 问题冰河暗涌和问题你手中的光芒似乎用second-pic */
+#envyEndingModal, #envyEndingModal2, #newOptionsModal {
+    background-image: url('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/second-pic.jpg');
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: overlay;
+}
+
+/* 问题TA并无大碍和问题你认为这样的问题莫名其妙用third-pic */
+#question3AModal, #question3AProceedModal, #forestJourneyModal {
+    background-image: url('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/third-pic.jpg');
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: overlay;
+}
+
+/* 问题没有风声和真结局1弹窗用forth-pic */
+#finalTextModal, #trueEndingModal {
+    background-image: url('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/forth-pic.jpg');
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: overlay;
+}
+
+.quiz-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.quiz-content {
+    width: 90%;
+    max-width: 500px;
+    max-height: calc(var(--app-height, 100vh) - 36px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 30px;
+    box-shadow: 0 0 30px rgba(135, 206, 235, 0.5);
+    text-align: center;
+    position: relative;
+}
+
+/* 文字内容样式 */
+.text-content {
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+.text-content p {
+    font-size: clamp(1rem, 2.4vw, 1.4rem);
+    margin-bottom: 1.2rem;
+    line-height: 1.8;
+    text-shadow: 0 0 8px rgba(135, 206, 235, 0.6);
+    animation: fadeIn 1s ease-in;
+}
+
+/* 选项样式 - 为A/B两个选项优化 */
+.quiz-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 30px; /* 增加文字内容和选项之间的间距 */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.quiz-options.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.quiz-option {
+    padding: 15px 25px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: clamp(0.95rem, 2.3vw, 1.2rem);
+    line-height: 1.45;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.quiz-option:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(135, 206, 235, 0.6);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* 选项A特定样式 */
+#optionA, #optionA2, #newOptionA {
+    background: linear-gradient(135deg, rgba(135, 206, 235, 0.2), rgba(255, 255, 255, 0.1));
+}
+
+#optionA:hover, #optionA2:hover, #newOptionA:hover {
+    background: linear-gradient(135deg, rgba(135, 206, 235, 0.4), rgba(255, 255, 255, 0.2));
+}
+
+/* 选项B特定样式 */
+#optionB, #optionB2, #newOptionB {
+    background: linear-gradient(135deg, rgba(255, 105, 180, 0.2), rgba(255, 255, 255, 0.1));
+}
+
+#optionB:hover, #optionB2:hover, #newOptionB:hover {
+    background: linear-gradient(135deg, rgba(255, 105, 180, 0.4), rgba(255, 255, 255, 0.2));
+}
+
+/* 返回按钮样式 - 不需要太大 */
+.back-button {
+    margin-top: 20px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.back-button.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 10px rgba(135, 206, 235, 0.4);
+}
+
+/* 文字淡入动画 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 操控按钮容器 - 为触摸设备优化 */
+.controls {
+    position: absolute;
+    bottom: max(10%, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 60px;
+    z-index: 5;
+    /* 确保在所有设备上都可点击 */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* 优化跳跃按钮样式和触摸区域 */
+.jump-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    /* 增加触摸区域 */
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 移动设备触摸反馈 */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 鼠标悬停效果 */
+.jump-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+/* 触摸/点击效果 */
+.jump-btn:active {
+    transform: scale(0.95);
+    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+/* 优化方向按钮样式和触摸区域 */
+.btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.1s ease;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    /* 增加触摸区域 */
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 移动设备触摸反馈 */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 鼠标悬停效果 */
+.btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+}
+
+/* 触摸/点击效果 */
+.btn:active {
+    transform: scale(0.95);
+    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+/* 动画 */
+@keyframes pulse {
+    from { opacity: 0.6; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes ripple {
+    0% { transform: rotate(0deg) translate(-50%, -50%); }
+    100% { transform: rotate(360deg) translate(-50%, -50%); }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    body {
+        position: fixed;
+        inset: 0;
+    }
+
+    .controls {
+        width: min(92vw, 360px);
+        justify-content: space-between;
+        gap: 0;
+        bottom: max(18px, calc(env(safe-area-inset-bottom) + 18px));
+    }
+    
+    .btn, .jump-btn {
+        width: 68px;
+        height: 68px;
+        font-size: 1.8rem;
+    }
+    
+    .player {
+        width: 30px;
+        height: 45px;
+    }
+    
+    .circle {
+        width: 25px;
+        height: 25px;
+    }
+    
+    .light-spot, .target-spot {
+        width: 20px;
+        height: 20px;
+    }
+    
+    /* 调整开始游戏界面文字大小 */
+
+/* 开始游戏按钮悬停效果 */
+#startAudioBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+#startAudioBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+    .start-game p {
+        font-size: clamp(1.2rem, 4vw, 1.8rem);
+        margin-top: 3rem;
+    }
+    
+    /* 调整开始文字大小 */
+    .start-text p {
+        font-size: clamp(1.2rem, 4vw, 1.8rem);
+        margin-bottom: 1.5rem;
+    }
+    
+    /* 优化问答界面在移动设备上的显示 */
+    .quiz-content {
+        width: min(94vw, 520px);
+        padding: 18px;
+    }
+    
+    .quiz-question {
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+    }
+    
+    .quiz-option {
+        padding: 12px 14px;
+        font-size: 1rem;
+    }
+}
+
+/* 为更小的移动设备优化 */
+@media (max-width: 480px) {
+    .controls {
+        width: min(94vw, 320px);
+        bottom: max(16px, calc(env(safe-area-inset-bottom) + 16px));
+    }
+    
+    .btn, .jump-btn {
+        width: 58px;
+        height: 58px;
+        font-size: 1.5rem;
+    }
+    
+    .player {
+        width: 25px;
+        height: 38px;
+    }
+    
+    .circle {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .light-spot, .target-spot {
+        width: 18px;
+        height: 18px;
+    }
+    
+    /* 进度圈位置调整 */
+    .progress-circles {
+        top: max(14px, env(safe-area-inset-top));
+        right: max(14px, env(safe-area-inset-right));
+        gap: 10px;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+    .start-game p {
+        margin-top: 1.5rem;
+        font-size: 1.1rem;
+    }
+
+    .controls {
+        width: min(48vw, 300px);
+        bottom: max(10px, env(safe-area-inset-bottom));
+    }
+
+    .btn, .jump-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+
+    .quiz-content {
+        max-width: 680px;
+        max-height: calc(var(--app-height, 100vh) - 24px);
+        padding: 14px 18px;
+    }
+
+    .text-content p {
+        line-height: 1.55;
+        margin-bottom: 0.65rem;
+    }
+
+    .quiz-options {
+        gap: 10px;
+        margin-top: 16px;
+    }
+}
+
+/* 黑屏元素样式 */
+.black-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: var(--app-height, 100vh);
+    background-color: #000000;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 1s ease;
+}
+
+.black-screen.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* 仔细看一看文字样式 - 小字体，靠近底部 */
+.look-carefully {
+    font-size: 0.9rem; /* 小字体 */
+    color: rgba(255, 255, 255, 0.7); /* 半透明白色 */
+    margin-bottom: 50px; /* 距离底部有一定距离 */
+    text-align: center;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    animation: fadeIn 1.5s ease-in;
+}
+
+/* 响应式调整黑屏文字 */
+@media (max-width: 768px) {
+    .look-carefully {
+        font-size: 0.8rem;
+        margin-bottom: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .look-carefully {
+        font-size: 0.7rem;
+        margin-bottom: 30px;
+    }
+
+}
+
+/* 手机端覆盖：优先保证能读、能点、能完整看到操作区 */
+@media (max-width: 768px), (pointer: coarse) {
+    html,
+    body {
+        width: 100%;
+        height: var(--app-height, 100vh);
+        overflow: hidden;
+    }
+
+    #model-preview-container {
+        height: var(--app-height, 100vh);
+        padding: max(14px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    #model-preview-container canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    #preview-info {
+        top: max(16px, env(safe-area-inset-top));
+        width: min(92vw, 360px);
+        padding: 0;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    #preview-info p {
+        margin: 0 0 6px;
+    }
+
+    #interaction-hint {
+        bottom: calc(env(safe-area-inset-bottom) + 84px);
+        width: min(88vw, 340px);
+        text-align: center;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+
+    #start-game-btn {
+        bottom: calc(env(safe-area-inset-bottom) + 22px);
+        min-width: 150px;
+        min-height: 48px;
+        padding: 12px 22px;
+        font-size: 17px;
+        border-radius: 8px;
+    }
+
+    .start-text {
+        width: min(92vw, 360px);
+    }
+
+    .start-text .note,
+    .start-game p {
+        font-size: 1.05rem;
+        line-height: 1.45;
+    }
+
+    .start-game p {
+        margin: 1rem 16px 0;
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .ground,
+    .ground0 {
+        bottom: 28%;
+    }
+
+    .water-ripple {
+        height: 28%;
+    }
+
+    .player {
+        width: 28px;
+        height: 42px;
+    }
+
+    .progress-circles {
+        top: max(12px, env(safe-area-inset-top));
+        right: max(12px, env(safe-area-inset-right));
+        gap: 8px;
+    }
+
+    .circle {
+        width: 18px;
+        height: 18px;
+    }
+
+    .light-spot,
+    .target-spot {
+        width: 18px;
+        height: 18px;
+    }
+
+    .controls {
+        width: min(78vw, 280px);
+        bottom: max(84px, calc(env(safe-area-inset-bottom) + 84px));
+        gap: 0;
+        justify-content: space-between;
+    }
+
+    .btn,
+    .jump-btn {
+        width: 50px;
+        height: 50px;
+        border-width: 2px;
+        font-size: 1.22rem;
+    }
+
+    .quiz-modal {
+        justify-content: flex-start;
+        padding: max(12px, env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .quiz-content {
+        width: min(94vw, 420px);
+        max-height: calc(var(--app-height, 100vh) - 24px);
+        margin: auto 0;
+        padding: 16px 14px;
+        border-radius: 10px;
+        box-shadow: 0 0 18px rgba(135, 206, 235, 0.36);
+    }
+
+    .text-content,
+    .text-content p,
+    #envyEndingText,
+    #newStoryText,
+    #newOptionsText,
+    #question3AText,
+    #question3AProceedText,
+    #badEndingText,
+    #envyEndingText2 {
+        font-size: 0.98rem;
+        line-height: 1.65;
+    }
+
+    .text-content p {
+        margin-bottom: 0.8rem;
+    }
+
+    .quiz-options {
+        gap: 10px;
+        margin-top: 16px;
+    }
+
+    .quiz-option {
+        padding: 11px 12px;
+        font-size: 0.95rem;
+        line-height: 1.35;
+        border-radius: 8px;
+    }
+
+    .back-button {
+        margin-top: 14px;
+        padding: 8px 12px;
+        font-size: 0.86rem;
+    }
+
+    #audioPrompt {
+        height: var(--app-height, 100vh) !important;
+        padding: 18px !important;
+    }
+
+    #audioPrompt > div {
+        width: min(88vw, 340px);
+        padding: 18px !important;
+        border-radius: 10px !important;
+    }
+
+    #audioPrompt h2 {
+        font-size: 1.3rem;
+        margin-bottom: 10px;
+    }
+
+    #audioPrompt p {
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    #startAudioBtn {
+        width: min(78vw, 240px);
+        margin: 16px 0 0 !important;
+        padding: 12px 18px !important;
+        font-size: 16px !important;
+    }
+}
+
+@media (max-width: 380px) {
+    #preview-info {
+        font-size: 12px;
+    }
+
+    .quiz-content {
+        padding: 14px 12px;
+    }
+
+    .text-content,
+    .text-content p,
+    #envyEndingText,
+    #newStoryText,
+    #newOptionsText,
+    #question3AText,
+    #question3AProceedText,
+    #badEndingText,
+    #envyEndingText2 {
+        font-size: 0.92rem;
+        line-height: 1.55;
+    }
+
+    .btn,
+    .jump-btn {
+        width: 46px;
+        height: 46px;
+    }
+}
+
+@media (max-width: 768px) and (min-height: 760px), (pointer: coarse) and (min-height: 760px) {
+    .controls {
+        bottom: max(110px, calc(env(safe-area-inset-bottom) + 110px));
+    }
+}
+
+@media (max-width: 768px) and (max-height: 680px), (pointer: coarse) and (max-height: 680px) {
+    .ground,
+    .ground0 {
+        bottom: 24%;
+    }
+
+    .water-ripple {
+        height: 24%;
+    }
+
+    .controls {
+        bottom: max(72px, calc(env(safe-area-inset-bottom) + 72px));
+    }
+}
+
+    </style>
+    <script>
+      function setAppHeight() {
+        document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+      }
+      window.addEventListener('resize', setAppHeight);
+      window.addEventListener('orientationchange', setAppHeight);
+      setAppHeight();
+    </script>
 </head>
 <body>
     <!-- 3D模型预览容器 -->
@@ -99,7 +1110,7 @@
         </div>
         <div id="loading">正在加载3D模型...</div>
         <div id="interaction-hint">按住鼠标并移动，或转动鼠标滚轮开始探索</div>
-        <!-- <button id="start-game-btn">进入游戏</button> -->
+        <button id="start-game-btn" type="button">进入游戏</button>
     </div>
 
     <!-- 初始黑幕 -->
@@ -408,8 +1419,1739 @@
             </div>
         </div>
     </div>
+
+    <script>
+window.addEventListener('DOMContentLoaded', () => {
+    // 安全地预加载音频文件，简化错误处理
+    try {
+        preloadAudio();
+        
+        // 尝试在页面加载后自动播放背景音乐
+        setTimeout(() => {
+            try {
+                playMusic('bayinhe');
+            } catch (playError) {
+                console.warn('自动播放失败，可能需要用户交互:', playError);
+                // 不显示错误信息，保持界面整洁
+            }
+        }, 1000);
+    } catch (error) {
+        // 静默处理错误，确保游戏能继续运行
+        console.warn('音频预加载出现错误，但不影响游戏正常运行:', error);
+    }
     
-    <script src="test.js"></script>
+    // 1. 初始元素获取与基础配置
+    const blackMask = document.querySelector('.black-mask');
+    const startText = document.querySelector('.start-text');
+    const startgame = document.querySelector('.start-game');
+    const targetSpot = document.querySelector('.target-spot');
+    const gameContainer = document.querySelector('.game-container');
+    const startPlayer = document.querySelector('.start-game .player'); // 开始界面的人物
+    const gamePlayer = document.querySelector('.game-container .player'); // 游戏界面的人物
+    const leftBtn = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
+    const jumpBtn = document.getElementById('jumpBtn');
+    const progressCircles = document.querySelectorAll('.circle');
+    const quizModal = document.getElementById('quizModal');
+    const textContent = document.getElementById('textContent');
+    const quizOptions = document.getElementById('quizOptions');
+    const backButton = document.getElementById('backButton');
+    const optionA = document.getElementById('optionA');
+    const optionB = document.getElementById('optionB');
+    
+    // 第二个弹窗元素
+    const quizModal2 = document.getElementById('quizModal2');
+    const textContent2 = document.getElementById('textContent2');
+    const quizOptions2 = document.getElementById('quizOptions2');
+    const backButton2 = document.getElementById('backButton2');
+    const optionA2 = document.getElementById('optionA2');
+    const optionB2 = document.getElementById('optionB2');
+    
+    // 问题3选择A后的新弹窗元素
+    const question3AModal = document.getElementById('question3AModal');
+const question3AText = document.getElementById('question3AText');
+const question3AOptions = document.getElementById('question3AOptions');
+const question3ABackButton = document.getElementById('question3ABackButton');
+const question3AOptionA = document.getElementById('question3AOptionA');
+const question3AOptionB = document.getElementById('question3AOptionB');
+const question3AOptionC = document.getElementById('question3AOptionC');
+
+// 问题3A后续新弹窗元素引用
+const question3AProceedModal = document.getElementById('question3AProceedModal');
+const question3AProceedText = document.getElementById('question3AProceedText');
+const question3AProceedOptions = document.getElementById('question3AProceedOptions');
+
+const question3AProceedOptionA = document.getElementById('question3AProceedOptionA');
+const question3AProceedOptionB = document.getElementById('question3AProceedOptionB');
+
+// 新剧情分支弹窗元素引用
+const forestJourneyModal = document.getElementById('forestJourneyModal');
+const forestJourneyText = document.getElementById('forestJourneyText');
+const forestJourneyOptions = document.getElementById('forestJourneyOptions');
+const forestJourneyBackButton = document.getElementById('forestJourneyBackButton');
+const forestJourneyOptionA = document.getElementById('forestJourneyOptionA');
+const forestJourneyOptionB = document.getElementById('forestJourneyOptionB');
+
+// 问题3A后续新弹窗选项A点击事件处理
+question3AProceedOptionA.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡
+    console.log('玩家选择了选项: 拉起ta的手和ta寻找朋友');
+    
+    // 播放https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Eternal.mp3音乐
+    try {
+        // 先尝试获取现有的音频对象
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        if (backgroundMusic) {
+            backgroundMusic.pause(); // 暂停当前播放的音乐
+            backgroundMusic.src = 'https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Eternal.mp3'; // 更改音频源
+            backgroundMusic.currentTime = 0; // 重置播放位置
+            // 尝试播放新的音乐
+            backgroundMusic.play().catch(error => {
+                console.warn('音乐播放失败:', error);
+            });
+        } else {
+            // 如果没有找到现有的音频元素，创建新的
+            const newAudio = new Audio('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Eternal.mp3');
+            newAudio.loop = true;
+            newAudio.volume = 0.5;
+            newAudio.play().catch(error => {
+                console.warn('音乐播放失败:', error);
+            });
+        }
+    } catch (error) {
+        console.warn('处理音频时出错:', error);
+    }
+    
+    // 隐藏当前弹窗
+    question3AProceedModal.classList.remove('active');
+    question3AProceedOptions.classList.remove('active');
+    
+    // 设置特殊标记，表示这是进入最终文字界面的路径
+    window.isFinalTextPath = true;
+    
+    // 显示新剧情分支弹窗
+    setTimeout(() => {
+        forestJourneyModal.classList.add('active');
+        forestJourneyOptions.classList.add('active');
+        forestJourneyBackButton.classList.add('active');
+    }, 500);
+});
+
+// 新剧情分支弹窗选项A点击事件处理
+forestJourneyOptionA.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡
+    console.log('玩家选择了选项: 拥有去抓住幸福的勇气');
+    // 隐藏当前弹窗
+    forestJourneyModal.classList.remove('active');
+    forestJourneyOptions.classList.remove('active');
+    forestJourneyBackButton.classList.remove('active');
+    
+    // 重置游戏状态，准备进入游戏界面收集光点
+    collectedSpots = 0;
+    progressCircles.forEach(circle => circle.classList.remove('filled'));
+    
+    // 设置游戏容器背景
+    setGameContainerBackground();
+    
+    // 激活游戏容器
+    gameContainer.classList.add('active');
+    
+    // 显示游戏中的人物
+    if (gamePlayer) {
+        gamePlayer.style.display = 'block';
+        gamePlayer.style.left = `${positionX}%`;
+        gamePlayer.style.bottom = `${positionY}%`;
+    }
+    
+    // 生成游戏中的光点
+    setTimeout(generateLightSpots, 1000);
+});
+
+// 新剧情分支弹窗选项B点击事件处理
+forestJourneyOptionB.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡
+    console.log('玩家选择了选项: 逃离孤独，靠近火源');
+    // 隐藏当前弹窗
+    forestJourneyModal.classList.remove('active');
+    forestJourneyOptions.classList.remove('active');
+    forestJourneyBackButton.classList.remove('active');
+    
+    // 重置游戏状态，准备进入游戏界面收集光点
+    collectedSpots = 0;
+    progressCircles.forEach(circle => circle.classList.remove('filled'));
+    
+    // 设置游戏容器背景
+    setGameContainerBackground();
+    
+    // 激活游戏容器
+    gameContainer.classList.add('active');
+    
+    // 显示游戏中的人物
+    if (gamePlayer) {
+        gamePlayer.style.display = 'block';
+        gamePlayer.style.left = `${positionX}%`;
+        gamePlayer.style.bottom = `${positionY}%`;
+    }
+    
+    // 生成游戏中的光点
+    setTimeout(generateLightSpots, 1000);
+});
+
+// 新剧情分支弹窗返回按钮点击事件处理
+forestJourneyBackButton.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡
+    console.log('点击了新剧情分支弹窗返回按钮');
+    // 隐藏当前弹窗
+    forestJourneyModal.classList.remove('active');
+    forestJourneyOptions.classList.remove('active');
+    forestJourneyBackButton.classList.remove('active');
+    
+    // 重置游戏状态
+    resetGame();
+});
+
+// 问题3A后续新弹窗选项B点击事件处理
+question3AProceedOptionB.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡
+    console.log('玩家选择了选项: 你拒绝了ta，决定自己去碰运气');
+    // 隐藏当前弹窗
+    question3AProceedModal.classList.remove('active');
+    question3AProceedOptions.classList.remove('active');
+
+    
+    // 显示假结局2弹窗
+    fakeEnding2Modal.classList.add('active');
+});
+
+
+
+// 假结局2弹窗元素引用
+const fakeEnding2Modal = document.getElementById('fakeEnding2Modal');
+const fakeEnding2Text = document.getElementById('fakeEnding2Text');
+const fakeEnding2BackButton = document.getElementById('fakeEnding2BackButton');
+
+// 假结局2重新开始按钮点击事件处理
+fakeEnding2BackButton.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡
+    console.log('点击了假结局2重新开始按钮');
+    // 隐藏当前弹窗
+    fakeEnding2Modal.classList.remove('active');
+    
+    // 隐藏所有弹窗和控件
+    if (quizModal) quizModal.classList.remove('active');
+    if (quizModal2) quizModal2.classList.remove('active');
+    if (badEndingModal) badEndingModal.classList.remove('active');
+    if (newStoryModal) newStoryModal.classList.remove('active');
+    if (newOptionsModal) newOptionsModal.classList.remove('active');
+    if (envyEndingModal) envyEndingModal.classList.remove('active');
+    if (envyEndingModal2) envyEndingModal2.classList.remove('active');
+    if (trueEndingModal2) trueEndingModal2.classList.remove('active');
+    if (question3AProceedModal) question3AProceedModal.classList.remove('active');
+    if (finalTextModal) finalTextModal.classList.remove('active');
+    
+    // 隐藏选项和按钮元素
+    if (quizOptions) quizOptions.classList.remove('active');
+    if (quizOptions2) quizOptions2.classList.remove('active');
+    if (backButton) backButton.classList.remove('active');
+    if (backButton2) backButton2.classList.remove('active');
+    if (newBackButton) newBackButton.classList.remove('active');
+    if (newOptions) newOptions.classList.remove('active');
+    if (badEndingBackButton) badEndingBackButton.classList.remove('active');
+    if (trueEnding2BackButton) trueEnding2BackButton.classList.remove('active');
+    if (trueEndingOptions) trueEndingOptions.classList.remove('active');
+    if (question3AProceedOptions) question3AProceedOptions.classList.remove('active');
+
+    if (finalTextOptions) finalTextOptions.classList.remove('active');
+    if (finalTextBackButton) finalTextBackButton.classList.remove('active');
+    if (fakeEnding2BackButton) fakeEnding2BackButton.classList.remove('active');
+    
+    const controls = document.querySelector('.controls');
+    if (controls) {
+        controls.classList.remove('active');
+        controls.style.display = 'none';
+    }
+    
+    // 重置游戏状态
+    collectedSpots = 0;
+    isFirstQuizAnswered = false;
+    isSecondQuizAnswered = false;
+    currentStage = 1; // 重置到第一阶段
+    
+    // 清除特殊标记
+    window.isQuestion3AGame = false;
+    window.isRescueGame = false;
+    window.isQuestion3AProceed = false;
+    window.isFinalTextPath = false;
+    
+    // 重置游戏容器背景
+    if (gameContainer) {
+        gameContainer.classList.remove('stage-1', 'stage-2', 'stage-3');
+    }
+    
+    // 重新开始游戏
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+});
+
+// 最终文字界面弹窗元素引用
+const finalTextModal = document.getElementById('finalTextModal');
+const finalText = document.getElementById('finalText');
+const finalTextOptions = document.getElementById('finalTextOptions');
+const finalTextBackButton = document.getElementById('finalTextBackButton');
+const finalTextOptionA = document.getElementById('finalTextOptionA');
+const finalTextOptionB = document.getElementById('finalTextOptionB');
+
+// 最终文字界面选项A点击事件处理
+finalTextOptionA.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡
+    console.log('点击了最终文字界面选项A：想');
+    // 隐藏当前弹窗
+    finalTextModal.classList.remove('active');
+    
+    // 显示黑屏元素
+    const blackScreen = document.getElementById('blackScreen');
+    if (blackScreen) {
+        blackScreen.classList.add('active');
+    }
+});
+
+// 黑屏点击进入真结局弹窗的逻辑
+const blackScreen = document.getElementById('blackScreen');
+const trueEndingModal = document.getElementById('trueEndingModal');
+
+if (blackScreen && trueEndingModal) {
+    blackScreen.addEventListener('click', function() {
+        console.log('点击了黑屏，进入真结局');
+        // 隐藏黑屏
+        blackScreen.classList.remove('active');
+        // 显示真结局弹窗
+        trueEndingModal.classList.add('active');
+    });
+}
+
+// 最终文字界面选项B点击事件处理
+finalTextOptionB.addEventListener('click', function(e) {
+    e.stopPropagation(); // 阻止事件冒泡
+    console.log('点击了最终文字界面选项B：不想');
+    // 隐藏当前弹窗
+    finalTextModal.classList.remove('active');
+    
+    // 直接显示真结局弹窗
+    const trueEndingModal = document.getElementById('trueEndingModal');
+    if (trueEndingModal) {
+        trueEndingModal.classList.add('active');
+    }
+});
+
+
+    
+    // 假结局弹窗元素
+    const badEndingModal = document.getElementById('badEndingModal');
+    const badEndingContent = document.getElementById('badEndingContent');
+    const badEndingText = document.getElementById('badEndingText');
+    const badEndingBackButton = document.getElementById('badEndingBackButton');
+    
+    // 新剧情弹窗元素
+    const newStoryModal = document.getElementById('newStoryModal');
+    const newStoryContent = document.getElementById('newStoryContent');
+    const newStoryText = document.getElementById('newStoryText');
+    
+    // 新选项弹窗元素
+    const newOptionsModal = document.getElementById('newOptionsModal');
+    const newOptionsContent = document.getElementById('newOptionsContent');
+    const newOptionsText = document.getElementById('newOptionsText');
+    const newOptions = document.getElementById('newOptions');
+    const newOptionA = document.getElementById('newOptionA');
+    const newOptionB = document.getElementById('newOptionB');
+    const newBackButton = document.getElementById('newBackButton');
+    
+    // 妒忌结局弹窗元素
+    const envyEndingModal = document.getElementById('envyEndingModal');
+    const envyEndingContent = document.getElementById('envyEndingContent');
+    const envyEndingText = document.getElementById('envyEndingText');
+    const envyOptions = document.getElementById('envyOptions');
+    const envyOptionA = document.getElementById('envyOptionA');
+    const envyOptionB = document.getElementById('envyOptionB');
+    const envyOptionC = document.getElementById('envyOptionC');
+    const envyBackButton = document.getElementById('envyBackButton');
+    
+    // 获取第二个冷漠离开后续弹窗（冰河暗涌）相关元素
+    const envyEndingModal2 = document.getElementById('envyEndingModal2');
+    const envyEndingContent2 = document.getElementById('envyEndingContent2');
+    const envyEndingText2 = document.getElementById('envyEndingText2');
+    const envyOptions2 = document.getElementById('envyOptions2');
+    const envyOptionA2 = document.getElementById('envyOptionA2');
+    const envyOptionB2 = document.getElementById('envyOptionB2');
+    const envyOptionC2 = document.getElementById('envyOptionC2');
+    const envyBackButton2 = document.getElementById('envyBackButton2');
+    
+    // 游戏状态变量 - 用于跟踪当前是第几个弹窗
+    let currentStage = 1; // 1: 第一个弹窗阶段, 2: 第二个弹窗阶段
+    
+    // 当前活动的玩家元素
+    let player = startPlayer; // 默认使用开始界面的人物
+    // 游戏状态变量
+    let positionX = 50; // 小人水平位置（百分比）
+    let positionY = 30; // 小人垂直位置（百分比，底部为基准）
+    const groundHeight = 30; // 地面高度（与CSS一致）
+    let isJumping = false; // 跳跃状态标记
+    let jumpForce = 0; // 跳跃力度
+    let collectedSpots = 0; // 收集的光点数量
+    const maxSpots = 3; // 最大光点数量（对应3个进度圈）
+    let isFirstQuizAnswered = false; // 第一题是否已回答
+    let isSecondQuizAnswered = false; // 第二题是否已回答
+    
+    // 2. 页面初始化与游戏启动
+    setTimeout(() => {
+        blackMask.style.opacity = '0';
+    }, 100);
+    
+    // 点击任意位置启动游戏
+    document.addEventListener('click', function startGame() {
+        startText.style.opacity = '0';
+        blackMask.style.opacity = '0';
+        startgame.classList.add('active');
+        
+        // 游戏开始时先播放背景音乐
+        playMusic('bayinhe');
+        
+        // 创建流水声
+        createWaterSound();
+        
+        // 生成固定目标光点并确保显示
+        generateTargetSpot();
+        targetSpot.style.display = 'block'; // 确保目标光点可见
+
+        // 显示开始界面的人物
+        startPlayer.style.display = 'block';
+        startPlayer.style.left = `${positionX}%`;
+        startPlayer.style.bottom = `${positionY}%`;
+
+        // 移除黑幕（动画结束后）
+        setTimeout(() => {
+            blackMask.style.display = 'none';
+        }, 2000);
+        
+        // 移除事件监听器，确保只触发一次
+        document.removeEventListener('click', startGame);
+    });
+    
+
+
+    // 3. 音频效果（流水声）和背景音乐
+    // 初始化音频上下文
+    let audioContext = null;
+
+    // 音频对象存储
+    let audioFiles = {};
+
+    // 预加载音乐文件 - 简化版
+    function preloadAudio() {
+        // 初始化音频对象存储
+        audioFiles = {};
+        
+        // 简化的音频文件列表
+        const audioNames = [
+            {id: 'trauma', path: 'https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Trauma.mp3'},
+            {id: 'areYouLost', path: 'https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Are%20you%20lost.mp3'},
+            {id: 'bayinhe', path: 'https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/bayinhe.mp3'}
+        ];
+        
+        // 逐个创建音频对象，避免同时创建过多导致错误
+        audioNames.forEach(audioInfo => {
+            try {
+                const audio = new Audio(audioInfo.path);
+                audio.loop = true;
+                audio.volume = 0.5;
+                audioFiles[audioInfo.id] = audio;
+            } catch (e) {
+                console.warn(`创建音频对象 ${audioInfo.id} 失败:`, e);
+            }
+        });
+    }
+
+    // 播放指定音乐 - 简化版
+function playMusic(musicName) {
+    try {
+        // 先停止所有音乐
+        if (audioFiles && typeof audioFiles === 'object') {
+            Object.values(audioFiles).forEach(audio => {
+                if (audio && typeof audio.pause === 'function') {
+                    try {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    } catch (e) {
+                        // 静默处理错误，不影响其他功能
+                    }
+                }
+            });
+        }
+        
+        // 播放指定音乐
+        if (audioFiles && audioFiles[musicName]) {
+            const audio = audioFiles[musicName];
+            
+            // 简单的播放尝试
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    // 播放失败时，静默处理，避免抛出错误
+                    // 尝试在用户下次交互时播放
+                    const handleUserInteraction = () => {
+                        audio.play().catch(() => {}); // 忽略错误
+                        document.removeEventListener('click', handleUserInteraction);
+                        document.removeEventListener('keydown', handleUserInteraction);
+                    };
+                    document.addEventListener('click', handleUserInteraction);
+                    document.addEventListener('keydown', handleUserInteraction);
+                });
+            }
+        }
+    } catch (error) {
+        // 静默处理所有错误，确保游戏能继续运行
+    }
+}
+
+// 停止所有音乐 - 增强版带错误处理
+function stopAllMusic() {
+    try {
+        if (audioFiles && typeof audioFiles === 'object') {
+            Object.values(audioFiles).forEach(audio => {
+                if (audio && typeof audio.pause === 'function') {
+                    try {
+                        audio.pause();
+                        audio.currentTime = 0;
+                    } catch (e) {
+                        console.warn('停止音频时出错:', e);
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('停止所有音乐时发生错误:', error);
+    }
+}
+
+// 重置游戏函数
+function resetGame() {
+    // 停止所有音乐
+    stopAllMusic();
+    
+    // 隐藏所有弹窗和控件
+    if (quizModal) quizModal.classList.remove('active');
+    if (quizModal2) quizModal2.classList.remove('active');
+    if (badEndingModal) badEndingModal.classList.remove('active');
+    if (question3AModal) question3AModal.classList.remove('active');
+    if (question3AProceedModal) question3AProceedModal.classList.remove('active');
+    if (finalTextModal) finalTextModal.classList.remove('active');
+    if (trueEndingModal) trueEndingModal.classList.remove('active');
+    if (trueEndingModal2) trueEndingModal2.classList.remove('active');
+    
+    // 隐藏选项和按钮元素
+    if (quizOptions) quizOptions.classList.remove('active');
+    if (quizOptions2) quizOptions2.classList.remove('active');
+    if (backButton) backButton.classList.remove('active');
+    if (backButton2) backButton2.classList.remove('active');
+    if (question3AOptions) question3AOptions.classList.remove('active');
+    if (question3ABackButton) question3ABackButton.classList.remove('active');
+    
+    const controls = document.querySelector('.controls');
+    if (controls) {
+        controls.classList.remove('active');
+        controls.style.display = 'none';
+    }
+    
+    // 重置游戏状态
+    collectedSpots = 0;
+    isFirstQuizAnswered = false;
+    isSecondQuizAnswered = false;
+    currentStage = 1; // 重置到第一阶段
+    
+    // 清除特殊标记
+    window.isQuestion3AGame = false;
+    window.isRescueGame = false;
+    window.isQuestion3AProceed = false;
+    window.isFinalTextPath = false;
+    
+    // 重置游戏容器背景
+    if (gameContainer) {
+        gameContainer.classList.remove('stage-1', 'stage-2', 'stage-3');
+    }
+    
+    // 重新开始游戏
+    setTimeout(() => {
+        location.reload();
+    }, 500);
+}
+
+    // 创建流水声
+    function createWaterSound() {
+        // 由于音频已经在DOMContentLoaded时预加载，这里不需要再调用preloadAudio()
+        // 避免重复加载和可能的音频错误
+        // 暂时不自动播放音乐，让游戏流程正常启动
+    }
+    
+    
+
+    // 4. 光点生成（仅在人物可跳到的范围内）
+function generateLightSpots() {
+    // 清除现有光点
+    document.querySelectorAll('.light-spot').forEach(spot => spot.remove());
+    
+    // 计算人物可触及的完整范围
+    const jumpMaxRise = 36; // 跳跃总高度(8+7+...+1)
+    const verticalMin = groundHeight; // 地面高度(30%)
+    const verticalMax = groundHeight + jumpMaxRise; // 最大跳跃高度(66%)
+    const horizontalMin = 10; // 人物可移动的左边界
+    const horizontalMax = 90; // 人物可移动的右边界
+    
+    // 为了让光点更分散，将范围划分为多个子区域
+    // 水平方向分3个区域，垂直方向分3个区域，共9个区域
+    const horizontalSegments = 3;
+    const verticalSegments = 3;
+    const horizontalStep = (horizontalMax - horizontalMin) / horizontalSegments;
+    const verticalStep = (verticalMax - verticalMin) / verticalSegments;
+    
+    // 记录已使用的区域，避免光点集中在同一区域
+    const usedSegments = new Set();
+    
+    for (let i = 0; i < maxSpots; i++) {
+        const spot = document.createElement('div');
+        spot.classList.add('light-spot');
+        
+        // 选择一个未使用的区域，确保分散
+        let segmentKey;
+        do {
+            const hSegment = Math.floor(Math.random() * horizontalSegments);
+            const vSegment = Math.floor(Math.random() * verticalSegments);
+            segmentKey = `${hSegment}-${vSegment}`;
+        } while (usedSegments.has(segmentKey) && usedSegments.size < horizontalSegments * verticalSegments);
+        
+        usedSegments.add(segmentKey);
+        const [hSegment, vSegment] = segmentKey.split('-').map(Number);
+        
+        // 在选定的区域内生成随机位置
+        const spotX = Math.floor(
+            Math.random() * horizontalStep + horizontalMin + hSegment * horizontalStep
+        );
+        const spotY = Math.floor(
+            Math.random() * verticalStep + verticalMin + vSegment * verticalStep
+        );
+        
+        spot.style.left = `${spotX}%`;
+        spot.style.bottom = `${spotY}%`;
+        
+        gameContainer.appendChild(spot);
+    }
+}
+    
+// 生成固定在人物初始头顶的目标光点（作为“终点”）
+function generateTargetSpot() {
+  // 人物初始位置（和你代码中positionX、positionY的初始值保持一致）
+  const playerInitialX = 50; // 人物初始水平位置（百分比）
+  const playerInitialY = 30; // 人物初始垂直位置（百分比，地面高度）
+  
+  // 光点相对于人物头顶的偏移量（可调整）
+  const offsetX = 0; // 水平偏移（0=正上方）
+  const offsetY = 15; // 垂直偏移（15=在人物头顶上方15%的位置，需要跳跃才能碰到）
+  
+  // 计算光点的固定位置（基于人物初始位置+偏移量）
+  const spotX = playerInitialX + offsetX;
+  const spotY = playerInitialY + offsetY;
+
+  // 设置光点位置（固定不变）
+  targetSpot.style.left = `${spotX}%`;
+  targetSpot.style.bottom = `${spotY}%`;
+}
+
+    // 5. 碰撞检测（优化：扩大可收集范围，大致碰到即收集）
+function checkCollision() {
+        // 使用当前活动的player元素
+        const playerRect = player.getBoundingClientRect();
+        // 扩大小人的碰撞范围（向四周各扩展15px）
+        const extendedPlayerRect = {
+            left: playerRect.left - 15,
+            right: playerRect.right + 15,
+            top: playerRect.top - 15,
+            bottom: playerRect.bottom + 15
+        };
+        
+        // 只在游戏界面激活时检查与随机光点的碰撞
+        if (gameContainer.classList.contains('active')) {
+            document.querySelectorAll('.light-spot').forEach(spot => {
+                const spotRect = spot.getBoundingClientRect();
+                
+                // 宽松的碰撞条件：扩展后的小人范围与光点有重叠即收集
+                if (
+                    extendedPlayerRect.left < spotRect.right &&
+                    extendedPlayerRect.right > spotRect.left &&
+                    extendedPlayerRect.top < spotRect.bottom &&
+                    extendedPlayerRect.bottom > spotRect.top
+                ) {
+                    // 收集光点
+                    spot.remove();
+                    collectedSpots++;
+                    
+                    // 当小人第一次吃到光点时播放https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Trauma.mp3
+                    if (collectedSpots === 1) {
+                        try {
+                            playMusic('trauma');
+                            console.log('小人吃到第一个光点，开始播放Trauma音乐');
+                        } catch (error) {
+                            console.warn('播放Trauma音乐失败:', error);
+                        }
+                    }
+                    
+                    // 填充进度圈
+                    if (collectedSpots <= maxSpots) {
+                        progressCircles[collectedSpots - 1].classList.add('filled');
+                    }
+                    
+                    // 集满3个光点，根据当前阶段显示对应的弹窗
+                    if (collectedSpots === maxSpots) {
+                        setTimeout(() => {
+                            // 检查是否是最终文字路径模式
+                            if (window.isFinalTextPath) { 
+                                // 显示最终文字界面弹窗，并确保选项和返回按钮默认可见
+                                finalTextModal.classList.add('active');
+                                finalTextOptions.classList.add('active');
+                                finalTextBackButton.classList.add('active');
+                                // 清除特殊标记
+                                window.isFinalTextPath = false;
+                            } 
+                            // 检查是否是问题3A后续游戏模式
+                            else if (window.isQuestion3AProceed) { 
+                                // 显示问题3A后续新弹窗，并确保选项和返回按钮默认可见
+                                question3AProceedModal.classList.add('active');
+                                question3AProceedOptions.classList.add('active');
+                            
+                            } 
+                            // 检查是否是问题3选择A后的游戏或从'集齐荧光拯救TA'选项进入的游戏
+                            else if (window.isQuestion3AGame || window.isRescueGame) { 
+                                // 播放"Trauma"音乐
+                                playMusic('trauma');
+                                // 显示问题3选择A后的弹窗，并确保选项和返回按钮默认可见
+                                question3AModal.classList.add('active');
+                                question3AOptions.classList.add('active');
+                                question3ABackButton.classList.add('active');
+                            // 隐藏游戏界面
+                            gameContainer.classList.remove('active');
+                            if (gamePlayer) {
+                                gamePlayer.style.display = 'none';
+                            }
+                            // 重置特殊标记
+                            window.isQuestion3AGame = false;
+                            window.isRescueGame = false;
+                            } else {
+                                // 常规逻辑
+                                if (currentStage === 1) {
+                                    quizModal.classList.add('active');
+                                } else if (currentStage === 2) {
+                                    quizModal2.classList.add('active');
+                                }
+                            }
+                        }, 500);
+                    }
+                }
+            });
+        }
+        
+        // 检查与固定光点的碰撞
+        if (targetSpot && targetSpot.style.display !== 'none') {
+            const fixedLightRect = targetSpot.getBoundingClientRect();
+            if (
+                extendedPlayerRect.left < fixedLightRect.right &&
+                extendedPlayerRect.right > fixedLightRect.left &&
+                extendedPlayerRect.top < fixedLightRect.bottom &&
+                extendedPlayerRect.bottom > fixedLightRect.top
+            ) {
+                // 碰到固定光点后：隐藏光点，显示游戏界面
+                targetSpot.style.display = 'none';
+                
+                // 切换到游戏界面的人物
+                player = gamePlayer;
+                gamePlayer.style.display = 'block';
+                gamePlayer.style.left = `${positionX}%`;
+                gamePlayer.style.bottom = `${positionY}%`;
+                
+                // 激活游戏容器
+                gameContainer.classList.add('active');
+                
+                // 生成游戏中的光点
+                generateLightSpots();
+                
+                // 隐藏开始界面（缩短延迟时间）
+                setTimeout(() => {
+                    startgame.style.opacity = '0';
+                    // 直接隐藏开始界面，不再有额外延迟
+                    startgame.style.display = 'none';
+                }, 100); // 从500ms减少到100ms
+            }
+        }
+}
+
+    // 6. 跳跃逻辑（超级玛丽式抛物线）
+    function jump() {
+        if (isJumping) return;
+        
+        isJumping = true;
+        jumpForce = 8; // 跳跃高度
+        
+        const jumpInterval = setInterval(() => {
+            // 上升阶段
+            if (jumpForce > 0) {
+                positionY += jumpForce;
+                jumpForce -= 1; // 重力衰减
+            } 
+            // 下降阶段
+            else if (positionY > groundHeight) {
+                positionY -= 8;
+            } 
+            // 落地
+            else {
+                positionY = groundHeight;
+                clearInterval(jumpInterval);
+                isJumping = false;
+            }
+            
+            // 更新当前活动小人的位置
+            player.style.bottom = `${positionY}%`;
+            // 跳跃过程中持续检测碰撞
+            checkCollision();
+        }, 30);
+    }
+    
+    // 7. 操控逻辑（左右移动+跳跃）
+    // 按钮控制
+    leftBtn.addEventListener('click', () => {
+        if (positionX > 10) {
+            positionX -= 5;
+            player.style.left = `${positionX}%`;
+            checkCollision();
+        }
+    });
+    
+    rightBtn.addEventListener('click', () => {
+        if (positionX < 90) {
+            positionX += 5;
+            player.style.left = `${positionX}%`;
+            checkCollision();
+        }
+    });
+    
+    jumpBtn.addEventListener('click', jump);
+    
+    // 键盘控制
+    document.addEventListener('keydown', (e) => {
+        switch(e.key) {
+            case 'ArrowLeft':
+                if (positionX > 10) {
+                    positionX -= 5;
+                    player.style.left = `${positionX}%`;
+                    checkCollision();
+                }
+                break;
+            case 'ArrowRight':
+                if (positionX < 90) {
+                    positionX += 5;
+                    player.style.left = `${positionX}%`;
+                    checkCollision();
+                }
+                break;
+            case 'ArrowUp':
+                jump();
+                break;
+        }
+    });
+    
+    // 触摸控制（左右滑动+上下滑动跳跃+点击跳跃）
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+
+    function shouldHandleGameTouch(e) {
+        const target = e.target;
+        const isControlTouch = target.closest && target.closest('.controls');
+        const isModalTouch = target.closest && target.closest('.quiz-modal.active, #audioPrompt, #model-preview-container');
+        return (startgame.classList.contains('active') || gameContainer.classList.contains('active') || isControlTouch) && !isModalTouch;
+    }
+
+    function handleTouchButton(e) {
+        const target = e.target;
+        if (!target.closest) return false;
+
+        if (target.closest('#leftBtn')) {
+            if (positionX > 10) {
+                positionX -= 5;
+                player.style.left = `${positionX}%`;
+                checkCollision();
+            }
+            return true;
+        }
+
+        if (target.closest('#rightBtn')) {
+            if (positionX < 90) {
+                positionX += 5;
+                player.style.left = `${positionX}%`;
+                checkCollision();
+            }
+            return true;
+        }
+
+        if (target.closest('#jumpBtn')) {
+            jump();
+            return true;
+        }
+
+        return false;
+    }
+
+    // 改进的触摸开始处理
+    document.addEventListener('touchstart', (e) => {
+        if (!shouldHandleGameTouch(e)) return;
+        // 只在游戏操作区阻止浏览器滚动，避免影响剧情选项点击
+        e.preventDefault();
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now(); // 记录触摸开始时间
+    }, { passive: false });
+
+    // 改进的触摸结束处理
+    document.addEventListener('touchend', (e) => {
+        if (!shouldHandleGameTouch(e)) return;
+        e.preventDefault();
+
+        if (handleTouchButton(e)) {
+            touchStartX = 0;
+            touchStartY = 0;
+            touchStartTime = 0;
+            return;
+        }
+        
+        if (!touchStartX || !touchStartY) return;
+        
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const diffX = touchEndX - touchStartX;
+        const diffY = touchEndY - touchStartY;
+        const touchDuration = Date.now() - touchStartTime; // 计算触摸持续时间
+
+        // 调整移动阈值，使其在移动设备上更加灵敏
+        const movementThreshold = 20; // 降低阈值以提高灵敏度
+        const tapThreshold = 200; // 点击持续时间阈值（毫秒）
+
+        // 优先判断上下滑动（往上滑触发跳跃）
+        if (diffY < -movementThreshold) {
+            jump();
+        } 
+        // 左右滑动移动
+        else if (diffX > movementThreshold && positionX < 90) {
+            // 根据滑动距离调整移动速度，使控制更自然
+            const moveAmount = Math.min(15, Math.abs(diffX) / 10);
+            positionX += moveAmount;
+            if (positionX > 90) positionX = 90; // 确保不超出边界
+            player.style.left = `${positionX}%`;
+            checkCollision();
+        } else if (diffX < -movementThreshold && positionX > 10) {
+            const moveAmount = Math.min(15, Math.abs(diffX) / 10);
+            positionX -= moveAmount;
+            if (positionX < 10) positionX = 10; // 确保不超出边界
+            player.style.left = `${positionX}%`;
+            checkCollision();
+        }
+        // 点击（短时间触摸）也触发跳跃
+        else if (Math.abs(diffX) < movementThreshold && Math.abs(diffY) < movementThreshold && touchDuration < tapThreshold) {
+            jump();
+        }
+        
+        // 重置起始坐标和时间
+        touchStartX = 0;
+        touchStartY = 0;
+        touchStartTime = 0;
+    }, { passive: false });
+    
+    // 添加触摸移动事件监听，提供更实时的反馈
+    document.addEventListener('touchmove', (e) => {
+        if (shouldHandleGameTouch(e)) {
+            e.preventDefault();
+        }
+    }, { passive: false });
+    
+    // 8. 文字界面和选项的交互逻辑
+    // 获取quiz-content元素
+    const quizContent = document.querySelector('#quizModal .quiz-content');
+    const quizContent2 = document.querySelector('#quizModal2 .quiz-content');
+    
+    // 第一个弹窗 - 文字界面点击事件 - 显示选项
+    quizContent.addEventListener('click', (e) => {
+        // 避免点击选项或返回按钮时触发
+        if (e.target === quizOptions || quizOptions.contains(e.target) || 
+            e.target === backButton || backButton.contains(e.target)) {
+            return;
+        }
+        
+        textContent.style.opacity = '0.3'; // 文字透明度降低
+        quizOptions.classList.add('active'); // 显示选项
+        backButton.classList.add('active'); // 显示返回按钮
+    });
+    
+    // 第二个弹窗 - 文字界面点击事件 - 显示选项
+    quizContent2.addEventListener('click', (e) => {
+        // 避免点击选项或返回按钮时触发
+        if (e.target === quizOptions2 || quizOptions2.contains(e.target) || 
+            e.target === backButton2 || backButton2.contains(e.target)) {
+            return;
+        }
+        
+        textContent2.style.opacity = '0.3'; // 文字透明度降低
+        quizOptions2.classList.add('active'); // 显示选项
+        backButton2.classList.add('active'); // 显示返回按钮
+    });
+    
+    // 第一个弹窗 - 返回按钮点击事件 - 返回文字界面
+    backButton.addEventListener('click', () => {
+        textContent.style.opacity = '1'; // 文字恢复正常显示
+        quizOptions.classList.remove('active'); // 隐藏选项
+        backButton.classList.remove('active'); // 隐藏返回按钮
+    });
+    
+    // 第二个弹窗 - 返回按钮点击事件 - 返回文字界面
+    backButton2.addEventListener('click', () => {
+        textContent2.style.opacity = '1'; // 文字恢复正常显示
+        quizOptions2.classList.remove('active'); // 隐藏选项
+        backButton2.classList.remove('active'); // 隐藏返回按钮
+    });
+    
+    // 选项A2点击事件
+    optionA2.addEventListener('click', () => {
+        // 点击A选项时，先显示新故事弹窗（树洞事件描述）
+        quizModal2.classList.remove('active');
+        setTimeout(() => {
+            newStoryModal.classList.add('active');
+        }, 500);
+    });
+
+    // 新故事弹窗点击事件 - 点击弹窗任意位置显示选项弹窗
+    newStoryContent.addEventListener('click', () => {
+        // 隐藏故事弹窗
+        newStoryModal.classList.remove('active');
+        setTimeout(() => {
+            // 显示选项弹窗
+            newOptionsModal.classList.add('active');
+            // 初始状态：只显示文字，不显示选项和返回按钮
+            newOptionsText.style.opacity = '1';
+            newOptions.classList.remove('active');
+            newBackButton.classList.remove('active');
+        }, 500);
+    });
+
+    // 新选项弹窗点击事件 - 点击弹窗任意位置显示选项
+    // 已在前面声明，无需重复声明
+    // const newOptionsContent = document.querySelector('#newOptionsModal .quiz-content');
+    newOptionsContent.addEventListener('click', (e) => {
+        // 避免点击选项或返回按钮时触发
+        if (e.target === newOptions || newOptions.contains(e.target) || 
+            e.target === newBackButton || newBackButton.contains(e.target)) {
+            return;
+        }
+        
+        newOptionsText.style.opacity = '0.3'; // 文字透明度降低
+        newOptions.classList.add('active'); // 显示选项
+        newBackButton.classList.add('active'); // 显示返回按钮
+    });
+
+    // 新选项弹窗 - 返回按钮点击事件 - 返回文字界面
+    newBackButton.addEventListener('click', () => {
+        // 直接在当前弹窗内调整UI，而不是切换到另一个弹窗
+        newOptionsText.style.opacity = '1'; // 文字恢复正常显示
+        newOptions.classList.remove('active'); // 隐藏选项
+        newBackButton.classList.remove('active'); // 隐藏返回按钮
+    });
+
+    // 新选项A点击事件
+    newOptionA.addEventListener('click', () => {
+        console.log('玩家选择了选项: 集齐荧光拯救TA');
+        // 播放https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/bayinhe.mp3音乐
+        try {
+            // 先尝试获取现有的音频对象
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            if (backgroundMusic) {
+                backgroundMusic.pause(); // 暂停当前播放的音乐
+                backgroundMusic.src = 'https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/bayinhe.mp3'; // 更改音频源
+                backgroundMusic.currentTime = 0; // 重置播放位置
+                // 尝试播放新的音乐
+                backgroundMusic.play().catch(error => {
+                    console.warn('音乐播放失败:', error);
+                });
+            } else {
+                // 如果没有找到现有的音频元素，创建新的
+                const newAudio = new Audio('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/bayinhe.mp3');
+                newAudio.loop = true;
+                newAudio.volume = 0.5;
+                newAudio.play().catch(error => {
+                    console.warn('音乐播放失败:', error);
+                });
+            }
+        } catch (error) {
+            console.warn('处理音频时出错:', error);
+        }
+        
+        // 隐藏当前弹窗
+        newOptionsModal.classList.remove('active');
+        
+        // 重置游戏状态，准备进入游戏界面收集光点
+        collectedSpots = 0;
+        progressCircles.forEach(circle => circle.classList.remove('filled'));
+        
+        // 激活游戏容器
+        gameContainer.classList.add('active');
+        
+        // 显示游戏中的人物
+        if (gamePlayer) {
+            gamePlayer.style.display = 'block';
+            gamePlayer.style.left = `${positionX}%`;
+            gamePlayer.style.bottom = `${positionY}%`;
+        }
+        
+        // 生成游戏中的光点
+        setTimeout(generateLightSpots, 1000);
+        
+        // 设置特殊标记，表示这是从"集齐荧光拯救TA"选项进入的游戏
+        window.isRescueGame = true;
+    });
+
+    // 新选项B点击事件
+    newOptionB.addEventListener('click', () => {
+        console.log('玩家选择了选项: 冷漠离开');
+        // 播放https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Evol.mp3音乐
+        try {
+            // 先尝试获取现有的音频对象
+            const backgroundMusic = document.getElementById('backgroundMusic');
+            if (backgroundMusic) {
+                backgroundMusic.pause(); // 暂停当前播放的音乐
+                backgroundMusic.src = 'https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Evol.mp3'; // 更改音频源
+                backgroundMusic.currentTime = 0; // 重置播放位置
+                // 尝试播放新的音乐
+                backgroundMusic.play().catch(error => {
+                    console.warn('音乐播放失败:', error);
+                });
+            } else {
+                // 如果没有找到现有的音频元素，创建新的
+                const newAudio = new Audio('https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Evol.mp3');
+                newAudio.loop = true;
+                newAudio.volume = 0.5;
+                newAudio.play().catch(error => {
+                    console.warn('音乐播放失败:', error);
+                });
+            }
+        } catch (error) {
+            console.warn('处理音频时出错:', error);
+        }
+        
+        // 隐藏当前弹窗，根据currentStage显示对应的冷漠离开后续弹窗
+        newOptionsModal.classList.remove('active');
+        setTimeout(() => {
+            if (currentStage === 1) {
+                // 第一阶段：显示第一个弹窗
+                envyEndingModal.classList.add('active');
+                // 初始状态：只显示文字，不显示选项和返回按钮
+                envyEndingText.style.opacity = '1';
+                envyOptions.classList.remove('active');
+                envyBackButton.classList.remove('active');
+            } else if (currentStage === 2) {
+                // 第二阶段：显示第二个弹窗（冰河暗涌）
+                envyEndingModal2.classList.add('active');
+                // 初始状态：只显示文字，不显示选项和返回按钮
+                envyEndingText2.style.opacity = '1';
+                envyOptions2.classList.remove('active');
+                envyBackButton2.classList.remove('active');
+            }
+        }, 500);
+    });
+    
+    // 冷漠离开后续弹窗 - 文字界面点击事件 - 显示选项（与问题1和问题2保持一致的实现方式）
+    envyEndingContent.addEventListener('click', (e) => {
+        // 避免点击选项或返回按钮时触发
+        if (e.target === envyOptions || envyOptions.contains(e.target) || 
+            e.target === envyBackButton || envyBackButton.contains(e.target)) {
+            return;
+        }
+        
+        envyEndingText.style.opacity = '0.3'; // 文字透明度降低
+        envyOptions.classList.add('active'); // 显示选项
+        envyBackButton.classList.add('active'); // 显示返回按钮
+    });
+    
+    // 冷漠离开后续弹窗 - 返回按钮点击事件 - 返回文字界面
+    envyBackButton.addEventListener('click', () => {
+        envyEndingText.style.opacity = '1'; // 文字恢复正常显示
+        envyOptions.classList.remove('active'); // 隐藏选项
+        envyBackButton.classList.remove('active'); // 隐藏返回按钮
+    });
+    
+    // 第二个冷漠离开后续弹窗（冰河暗涌） - 文字界面点击事件 - 显示选项
+    envyEndingContent2.addEventListener('click', (e) => {
+        // 避免点击选项或返回按钮时触发
+        if (e.target === envyOptions2 || envyOptions2.contains(e.target) || 
+            e.target === envyBackButton2 || envyBackButton2.contains(e.target)) {
+            return;
+        }
+        
+        envyEndingText2.style.opacity = '0.3'; // 文字透明度降低
+        envyOptions2.classList.add('active'); // 显示选项
+        envyBackButton2.classList.add('active'); // 显示返回按钮
+    });
+    
+    // 第二个冷漠离开后续弹窗（冰河暗涌） - 返回按钮点击事件 - 返回文字界面
+    envyBackButton2.addEventListener('click', () => {
+        envyEndingText2.style.opacity = '1'; // 文字恢复正常显示
+        envyOptions2.classList.remove('active'); // 隐藏选项
+        envyBackButton2.classList.remove('active'); // 隐藏返回按钮
+    });
+    
+    // 冷漠离开后续弹窗 - 选项A点击事件
+    envyOptionA.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
+        console.log('玩家选择了选项: 认为ta是一个麻烦');
+        // 确保元素存在
+        if (envyEndingModal && trueEndingModal2 && trueEnding2BackButton) {
+            // 强制移除并重新添加class，确保样式更新
+            envyEndingModal.classList.remove('active');
+            envyEndingModal.style.display = 'none'; // 临时隐藏
+            setTimeout(() => {
+                // 强制显示真结局2弹窗
+                trueEndingModal2.style.display = 'flex';
+                trueEndingModal2.classList.remove('active');
+                void trueEndingModal2.offsetWidth; // 触发重排
+                trueEndingModal2.classList.add('active');
+                // 确保按钮可见
+                trueEnding2BackButton.classList.add('active');
+            }, 300); // 缩短延迟时间
+        }
+    });
+    
+    // 冷漠离开后续弹窗 - 选项B点击事件
+    envyOptionB.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
+        console.log('玩家选择了选项: 妒忌ta的笑容，妒忌ta的勇敢，妒忌ta拥有你渴望的一切');
+        // 确保元素存在
+        if (envyEndingModal && trueEndingModal2 && trueEnding2BackButton) {
+            // 强制移除并重新添加class，确保样式更新
+            envyEndingModal.classList.remove('active');
+            envyEndingModal.style.display = 'none'; // 临时隐藏
+            setTimeout(() => {
+                // 强制显示真结局2弹窗
+                trueEndingModal2.style.display = 'flex';
+                trueEndingModal2.classList.remove('active');
+                void trueEndingModal2.offsetWidth; // 触发重排
+                trueEndingModal2.classList.add('active');
+                // 确保按钮可见
+                trueEnding2BackButton.classList.add('active');
+            }, 300); // 缩短延迟时间
+        }
+    });
+    
+    // 冷漠离开后续弹窗 - 选项C点击事件
+    envyOptionC.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
+        console.log('玩家选择了选项: 你想逃离');
+        // 确保元素存在
+        if (envyEndingModal && trueEndingModal2 && trueEnding2BackButton) {
+            // 强制移除并重新添加class，确保样式更新
+            envyEndingModal.classList.remove('active');
+            envyEndingModal.style.display = 'none'; // 临时隐藏
+            setTimeout(() => {
+                // 强制显示真结局2弹窗
+                trueEndingModal2.style.display = 'flex';
+                trueEndingModal2.classList.remove('active');
+                void trueEndingModal2.offsetWidth; // 触发重排
+                trueEndingModal2.classList.add('active');
+                // 确保按钮可见
+                trueEnding2BackButton.classList.add('active');
+            }, 300); // 缩短延迟时间
+        }
+    });
+    
+    // 第二个冷漠离开后续弹窗（冰河暗涌） - 选项A点击事件
+    envyOptionA2.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
+        console.log('玩家选择了选项: 认为ta是一个麻烦');
+        // 确保元素存在
+        if (envyEndingModal2 && trueEndingModal2 && trueEnding2BackButton) {
+            // 强制移除并重新添加class，确保样式更新
+            envyEndingModal2.classList.remove('active');
+            envyEndingModal2.style.display = 'none'; // 临时隐藏
+            setTimeout(() => {
+                // 强制显示真结局2弹窗
+                trueEndingModal2.style.display = 'flex';
+                trueEndingModal2.classList.remove('active');
+                void trueEndingModal2.offsetWidth; // 触发重排
+                trueEndingModal2.classList.add('active');
+                // 确保按钮可见
+                trueEnding2BackButton.classList.add('active');
+            }, 300); // 缩短延迟时间
+        }
+    });
+    
+    // 第二个冷漠离开后续弹窗（冰河暗涌） - 选项B点击事件
+    envyOptionB2.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
+        console.log('玩家选择了选项: 妒忌ta的笑容，妒忌ta的勇敢，妒忌ta拥有你渴望的一切');
+        // 确保元素存在
+        if (envyEndingModal2 && trueEndingModal2 && trueEnding2BackButton) {
+            // 强制移除并重新添加class，确保样式更新
+            envyEndingModal2.classList.remove('active');
+            envyEndingModal2.style.display = 'none'; // 临时隐藏
+            setTimeout(() => {
+                // 强制显示真结局2弹窗
+                trueEndingModal2.style.display = 'flex';
+                trueEndingModal2.classList.remove('active');
+                void trueEndingModal2.offsetWidth; // 触发重排
+                trueEndingModal2.classList.add('active');
+                // 确保按钮可见
+                trueEnding2BackButton.classList.add('active');
+            }, 300); // 缩短延迟时间
+        }
+    });
+    
+    // 第二个冷漠离开后续弹窗（冰河暗涌） - 选项C点击事件
+    envyOptionC2.addEventListener('click', (e) => {
+        e.stopPropagation(); // 阻止事件冒泡
+        console.log('玩家选择了选项: 你想逃离');
+        // 确保元素存在
+        if (envyEndingModal2 && trueEndingModal2 && trueEnding2BackButton) {
+            // 强制移除并重新添加class，确保样式更新
+            envyEndingModal2.classList.remove('active');
+            envyEndingModal2.style.display = 'none'; // 临时隐藏
+            setTimeout(() => {
+                // 强制显示真结局2弹窗
+                trueEndingModal2.style.display = 'flex';
+                trueEndingModal2.classList.remove('active');
+                void trueEndingModal2.offsetWidth; // 触发重排
+                trueEndingModal2.classList.add('active');
+                // 确保按钮可见
+                trueEnding2BackButton.classList.add('active');
+            }, 300); // 缩短延迟时间
+        }
+    });
+    
+    // 获取真结局2弹窗相关元素
+    const trueEndingContent2 = document.querySelector('#trueEndingModal2 .quiz-content');
+    const trueEndingText2 = document.getElementById('trueEndingText2');
+    const trueEndingOptions = document.getElementById('trueEndingOptions');
+    const trueEndingOptionA = document.getElementById('trueEndingOptionA');
+    const trueEndingOptionB = document.getElementById('trueEndingOptionB');
+    const trueEndingOptionC = document.getElementById('trueEndingOptionC');
+    
+    // 真结局2弹窗 - 文字界面点击事件 - 显示选项
+    trueEndingContent2.addEventListener('click', (e) => {
+        // 避免点击选项或返回按钮时触发
+        if (e.target === trueEndingOptions || trueEndingOptions.contains(e.target) || 
+            e.target === trueEnding2BackButton || trueEnding2BackButton.contains(e.target)) {
+            return;
+        }
+        
+        trueEndingText2.style.opacity = '0.3'; // 文字透明度降低
+        trueEndingOptions.classList.add('active'); // 显示选项
+        trueEnding2BackButton.classList.add('active'); // 显示返回按钮
+    });
+    
+    // 真结局2弹窗选项点击事件 - 选项已经全部显示在页面上，点击后直接重新开始
+    trueEndingOptionA.addEventListener('click', () => {
+        console.log('玩家选择了选项A: 为什么不救我？');
+        // 这里不做特殊处理，因为内容已经全部显示
+    });
+    
+    trueEndingOptionB.addEventListener('click', () => {
+        console.log('玩家选择了选项B: 为什么不救我？');
+        // 这里不做特殊处理，因为内容已经全部显示
+    });
+    
+    trueEndingOptionC.addEventListener('click', () => {
+        console.log('玩家选择了选项C: 为什么不救我？');
+        // 这里不做特殊处理，因为内容已经全部显示
+    });
+    
+    // 真结局2弹窗重新开始按钮点击事件
+    trueEnding2BackButton.addEventListener('click', () => {
+        trueEndingModal2.classList.remove('active');
+        
+        // 隐藏所有弹窗和控件
+        if (quizModal) quizModal.classList.remove('active');
+        if (quizModal2) quizModal2.classList.remove('active');
+        if (badEndingModal) badEndingModal.classList.remove('active');
+        if (newStoryModal) newStoryModal.classList.remove('active');
+        if (newOptionsModal) newOptionsModal.classList.remove('active');
+        if (envyEndingModal) envyEndingModal.classList.remove('active');
+        if (trueEndingModal2) trueEndingModal2.classList.remove('active');
+        
+        // 隐藏选项和按钮元素
+        if (quizOptions) quizOptions.classList.remove('active');
+        if (quizOptions2) quizOptions2.classList.remove('active');
+        if (backButton) backButton.classList.remove('active');
+        if (backButton2) backButton2.classList.remove('active');
+        if (newBackButton) newBackButton.classList.remove('active');
+        if (newOptions) newOptions.classList.remove('active');
+        if (badEndingBackButton) badEndingBackButton.classList.remove('active');
+        if (trueEnding2BackButton) trueEnding2BackButton.classList.remove('active');
+        if (trueEndingOptions) trueEndingOptions.classList.remove('active');
+        
+        const controls = document.querySelector('.controls');
+        if (controls) {
+            controls.classList.remove('active');
+            controls.style.display = 'none';
+        }
+        
+        // 重置游戏状态
+        collectedSpots = 0;
+        isFirstQuizAnswered = false;
+        isSecondQuizAnswered = false;
+        
+        // 重新开始游戏
+        setTimeout(() => {
+            location.reload();
+        }, 500);
+    });
+    optionB2.addEventListener('click', () => {
+        console.log('玩家选择了选项B2: 不可以');
+        
+        // 停止当前正在播放的所有音乐
+        stopAllMusic();
+        
+        // 播放"Are you lost"音乐
+        playMusic('areYouLost');
+        // 点击B选项时，直接显示假结局弹窗
+        quizModal2.classList.remove('active');
+        setTimeout(() => {
+            badEndingModal.classList.add('active');
+            // 添加这一行，确保按钮可见
+            badEndingBackButton.classList.add('active');
+        }, 500);
+    });
+
+    // 假结局弹窗重新开始按钮点击事件
+    badEndingBackButton.addEventListener('click', () => {
+        badEndingModal.classList.remove('active');
+        
+        // 隐藏所有弹窗和控件
+        if (quizModal) quizModal.classList.remove('active');
+        if (quizModal2) quizModal2.classList.remove('active');
+        if (badEndingModal) badEndingModal.classList.remove('active');
+        if (newStoryModal) newStoryModal.classList.remove('active');
+        if (newOptionsModal) newOptionsModal.classList.remove('active');
+        
+        // 隐藏选项和按钮元素
+        if (quizOptions) quizOptions.classList.remove('active');
+        if (quizOptions2) quizOptions2.classList.remove('active');
+        if (backButton) backButton.classList.remove('active');
+        if (backButton2) backButton2.classList.remove('active');
+        if (newBackButton) newBackButton.classList.remove('active');
+        if (newOptions) newOptions.classList.remove('active');
+        if (badEndingBackButton) badEndingBackButton.classList.remove('active');
+        
+        const controls = document.querySelector('.controls');
+        if (controls) {
+            controls.classList.remove('active');
+            controls.style.display = 'none';
+        }
+        
+        // 重置游戏状态
+        collectedSpots = 0;
+        isFirstQuizAnswered = false;
+        isSecondQuizAnswered = false;
+        currentStage = 1; // 重置到第一阶段
+        positionX = 50; // 重置位置
+        positionY = 30;
+        isJumping = false;
+        jumpForce = 0;
+        player = startPlayer; // 重置玩家元素引用
+        
+        // 重置进度圆圈
+        progressCircles.forEach(circle => circle.classList.remove('filled'));
+        
+        // 显示开始界面
+        setTimeout(() => {
+            // 重置开始界面
+            if (startText) startText.style.opacity = '1';
+            if (blackMask) {
+                blackMask.style.display = 'block';
+                blackMask.style.opacity = '1';
+            }
+            if (startgame) {
+                startgame.classList.remove('active');
+                startgame.style.display = 'block';
+                startgame.style.opacity = '1';
+            }
+            
+            // 确保玩家角色正确显示在开始界面
+            if (startPlayer) {
+                startPlayer.style.display = 'block';
+                startPlayer.style.left = '50%';
+                startPlayer.style.bottom = '30%';
+            }
+            if (gamePlayer) {
+                gamePlayer.style.display = 'none';
+            }
+            
+            // 移除现有的游戏元素
+            if (gameContainer) {
+                gameContainer.classList.remove('active');
+                // 清空游戏容器中的光点
+                const lightSpots = gameContainer.querySelectorAll('.light-spot');
+                lightSpots.forEach(spot => spot.remove());
+            }
+            
+            // 重新绑定开始游戏事件
+            document.addEventListener('click', function startGame() {
+                if (startText) startText.style.opacity = '0';
+                if (startgame) {
+                    startgame.classList.add('active');
+                    startgame.style.display = 'block';
+                }
+                if (targetSpot) targetSpot.style.display = 'block';
+                if (startPlayer) {
+                    startPlayer.style.display = 'block';
+                    startPlayer.style.left = '50%';
+                    startPlayer.style.bottom = '30%';
+                }
+                if (blackMask) blackMask.style.display = 'none';
+                document.removeEventListener('click', startGame);
+            });
+        }, 100);
+});
+    
+    // 设置游戏容器背景的函数
+    function setGameContainerBackground() {
+        // 移除所有阶段背景类
+        gameContainer.classList.remove('stage-1', 'stage-2', 'stage-3');
+        
+        // 根据当前阶段或特殊标记设置背景
+        if (window.isQuestion3AGame || window.isQuestion3AProceed) {
+            // 问题3A相关的游戏，使用第三阶段背景
+            gameContainer.classList.add('stage-3');
+        } else if (window.isRescueGame) {
+            // "集齐荧光拯救TA"后的游戏界面，使用第二阶段背景（与"你手中的光芒似乎"弹窗相同）
+            gameContainer.classList.add('stage-2');
+        } else {
+            // 默认使用第一阶段背景（first-pic），确保问题1A后的游戏也使用first-pic
+            gameContainer.classList.add('stage-1');
+        }
+    }
+    
+    // 处理选项选择的函数
+    function handleOptionSelection(option, stage) {
+        console.log('玩家在第', stage, '阶段选择了选项:', option);
+        
+        // 关闭对应的问答界面
+        if (stage === 1) {
+            quizModal.classList.remove('active');
+            
+            // 重置文字界面和选项的状态
+            setTimeout(() => {
+                textContent.style.opacity = '1';
+                quizOptions.classList.remove('active');
+                backButton.classList.remove('active');
+            }, 500);
+            
+            // 进入第二阶段
+            currentStage = 2;
+            
+            // 设置游戏容器背景
+            setGameContainerBackground();
+            
+            // 激活游戏容器
+            gameContainer.classList.add('active');
+            
+            // 显示游戏中的人物
+            if (gamePlayer) {
+                gamePlayer.style.display = 'block';
+                gamePlayer.style.left = `${positionX}%`;
+                gamePlayer.style.bottom = `${positionY}%`;
+            }
+        } else if (stage === 2 && option === 'A') {
+            // 问题3选择A选项的特殊处理
+            quizModal2.classList.remove('active');
+            
+            // 重置文字界面和选项的状态
+            setTimeout(() => {
+                textContent2.style.opacity = '1';
+                quizOptions2.classList.remove('active');
+                backButton2.classList.remove('active');
+            }, 500);
+            
+            // 重置游戏状态，准备进入游戏界面收集光点
+            collectedSpots = 0;
+            progressCircles.forEach(circle => circle.classList.remove('filled'));
+            
+            // 设置游戏容器背景
+            setGameContainerBackground();
+            
+            // 激活游戏容器
+            gameContainer.classList.add('active');
+            
+            // 显示游戏中的人物
+            if (gamePlayer) {
+                gamePlayer.style.display = 'block';
+                gamePlayer.style.left = `${positionX}%`;
+                gamePlayer.style.bottom = `${positionY}%`;
+            }
+            
+            // 生成游戏中的光点
+            setTimeout(generateLightSpots, 1000);
+            
+            // 设置特殊标记，表示正在进行问题3选择A后的游戏
+            window.isQuestion3AGame = true;
+            
+            // 不需要继续执行后续代码
+            return;
+        }
+        
+        // 重置游戏状态，重新生成光点
+        collectedSpots = 0;
+        progressCircles.forEach(circle => circle.classList.remove('filled'));
+        
+        // 设置游戏容器背景
+        setGameContainerBackground();
+        
+        // 激活游戏容器
+        gameContainer.classList.add('active');
+        
+        // 显示游戏中的人物
+        if (gamePlayer) {
+            gamePlayer.style.display = 'block';
+            gamePlayer.style.left = `${positionX}%`;
+            gamePlayer.style.bottom = `${positionY}%`;
+        }
+        
+        setTimeout(generateLightSpots, 1000);
+    }
+    
+    // 选项A点击事件
+    optionA.addEventListener('click', () => {
+        handleOptionSelection('A', 1);
+    });
+    
+    // 选项B点击事件
+    optionB.addEventListener('click', () => {
+        handleOptionSelection('B', 1);
+    });
+    
+    // 问题3A弹窗 - 移除点击显示选项的逻辑，确保问题和选项同时显示
+    question3AModal.addEventListener('click', function(e) {
+        // 确保不是点击在选项或返回按钮上
+        if (!question3AOptions.contains(e.target) && !question3ABackButton.contains(e.target)) {
+            // 确保选项和返回按钮处于激活状态
+            question3AOptions.classList.add('active');
+            question3ABackButton.classList.add('active');
+        }
+    });
+    
+    // 问题3A返回按钮点击事件
+    question3ABackButton.addEventListener('click', function(e) {
+        e.stopPropagation(); // 阻止冒泡
+        // 关闭弹窗并返回上一个界面
+        question3AModal.classList.remove('active');
+        // 可以根据需要添加返回到特定界面的逻辑
+        resetGame();
+    });
+    
+    // 问题3A选项A点击事件
+    question3AOptionA.addEventListener('click', function(e) {
+        e.stopPropagation(); // 阻止冒泡
+        console.log('玩家选择了问题3A的选项A');
+        // 隐藏当前弹窗
+        question3AModal.classList.remove('active');
+        
+        // 重置游戏状态，准备进入游戏界面收集光点
+        collectedSpots = 0;
+        progressCircles.forEach(circle => circle.classList.remove('filled'));
+        
+        // 设置特殊标记，表示这是从问题3A选项进入的游戏
+        window.isQuestion3AProceed = true;
+        
+        // 设置游戏容器背景
+        setGameContainerBackground();
+        
+        // 激活游戏容器
+        gameContainer.classList.add('active');
+        
+        // 显示游戏中的人物
+        if (gamePlayer) {
+            gamePlayer.style.display = 'block';
+            gamePlayer.style.left = `${positionX}%`;
+            gamePlayer.style.bottom = `${positionY}%`;
+        }
+        
+        // 生成游戏中的光点
+        setTimeout(generateLightSpots, 1000);
+    });
+    
+    // 问题3A选项B点击事件
+    question3AOptionB.addEventListener('click', function(e) {
+        e.stopPropagation(); // 阻止冒泡
+        console.log('玩家选择了问题3A的选项B');
+        // 隐藏当前弹窗
+        question3AModal.classList.remove('active');
+        
+        // 重置游戏状态，准备进入游戏界面收集光点
+        collectedSpots = 0;
+        progressCircles.forEach(circle => circle.classList.remove('filled'));
+        
+        // 设置特殊标记，表示这是从问题3A选项进入的游戏
+        window.isQuestion3AProceed = true;
+        
+        // 设置游戏容器背景
+        setGameContainerBackground();
+        
+        // 激活游戏容器
+        gameContainer.classList.add('active');
+        
+        // 显示游戏中的人物
+        if (gamePlayer) {
+            gamePlayer.style.display = 'block';
+            gamePlayer.style.left = `${positionX}%`;
+            gamePlayer.style.bottom = `${positionY}%`;
+        }
+        
+        // 生成游戏中的光点
+        setTimeout(generateLightSpots, 1000);
+    });
+    
+    // 问题3A选项C点击事件
+    question3AOptionC.addEventListener('click', function(e) {
+        e.stopPropagation(); // 阻止冒泡
+        console.log('玩家选择了问题3A的选项C');
+        // 隐藏当前弹窗
+        question3AModal.classList.remove('active');
+        
+        // 重置游戏状态，准备进入游戏界面收集光点
+        collectedSpots = 0;
+        progressCircles.forEach(circle => circle.classList.remove('filled'));
+        
+        // 设置特殊标记，表示这是从问题3A选项进入的游戏
+        window.isQuestion3AProceed = true;
+        
+        // 设置游戏容器背景
+        setGameContainerBackground();
+        
+        // 激活游戏容器
+        gameContainer.classList.add('active');
+        
+        // 显示游戏中的人物
+        if (gamePlayer) {
+            gamePlayer.style.display = 'block';
+            gamePlayer.style.left = `${positionX}%`;
+            gamePlayer.style.bottom = `${positionY}%`;
+        }
+        
+        // 生成游戏中的光点
+        setTimeout(generateLightSpots, 1000);
+    });
+
+});
+
+    </script>
     <!-- 初始音频交互提示 -->
     <div id="audioPrompt" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 9999;">
         <div style="text-align: center; color: white; padding: 20px; background: rgba(0,0,0,0.7); border-radius: 10px;">
@@ -420,7 +3162,7 @@
     </div>
     
     <!-- 音频标签 -->
-    <audio id="backgroundMusic" src="Trauma.mp3" loop="loop" controls="controls"></audio>
+    <audio id="backgroundMusic" src="https://to-the-new-world-by-ourselves.oss-cn-shenzhen.aliyuncs.com/Trauma.mp3" loop preload="auto"></audio>
     
     <script type="module">
       // 引入 Three.js 核心库和相关模块
@@ -465,10 +3207,181 @@
       pointLight.position.set(-3, 3, 3);
       scene.add(pointLight);
 
-      // 3. 加载 GLTF 模型
+      // 3. 加载内嵌 GLTF 模型，避免 OSS 跨域导致 scene.bin 加载失败
       const loader = new GLTFLoader();
-      loader.load(
-        "scene.gltf",
+      const embeddedGltf = {
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 880,
+      "max": [
+        2.17576003074646,
+        3.9209799766540527,
+        2.748342990875244
+      ],
+      "min": [
+        -1.7102420330047607,
+        -3.753014087677002,
+        -2.622483968734741
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 10560,
+      "componentType": 5126,
+      "count": 880,
+      "max": [
+        1.0,
+        0.9819326400756836,
+        0.9988927841186523
+      ],
+      "min": [
+        -1.0,
+        -0.9952171444892883,
+        -0.999580979347229
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 880,
+      "max": [
+        0.9243069887161255,
+        0.9841579794883728
+      ],
+      "min": [
+        0.7652390003204346,
+        0.013240000233054161
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 1080,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "Vladislav Laryushin (https://sketchfab.com/Zorg741)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/birds-b2c32bd4b78747e5b061c8348128e205",
+      "title": "Birds"
+    },
+    "generator": "Sketchfab-12.66.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 4320,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 7040,
+      "byteOffset": 4320,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 21120,
+      "byteOffset": 11360,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 32480,
+      "uri": "data:application/octet-stream;base64,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KwIAACwCAAAtAgAALgIAAC8CAAAwAgAAMQIAADICAAAzAgAANAIAADUCAAA2AgAANAIAADYCAAA3AgAAOAIAADkCAAA6AgAAOwIAADwCAAA9AgAAOwIAAD0CAAA+AgAAPwIAAEACAABBAgAAPwIAAEECAABCAgAAQwIAAEQCAABFAgAARgIAAEcCAABIAgAASQIAAEoCAABLAgAATAIAAE0CAABOAgAATwIAAFACAABRAgAAUgIAAFMCAABUAgAAVQIAAFYCAABXAgAAVQIAAFcCAABYAgAAWQIAAFoCAABbAgAAXAIAAF0CAABeAgAAXAIAAF4CAABfAgAAYAIAAGECAABiAgAAYAIAAGICAABjAgAAZAIAAGUCAABmAgAAZAIAAGYCAABnAgAAaAIAAGkCAABqAgAAaAIAAGoCAABrAgAAbAIAAG0CAABuAgAAbAIAAG4CAABvAgAAcAIAAHECAAByAgAAcwIAAHQCAAB1AgAAdgIAAHcCAAB4AgAAeQIAAHoCAAB7AgAAfAIAAH0CAAB+AgAAfwIAAIACAACBAgAAggIAAIMCAACEAgAAhQIAAIYCAACHAgAAiAIAAIkCAACKAgAAiAIAAIoCAACLAgAAjAIAAI0CAACOAgAAjwIAAJACAACRAgAAjwIAAJECAACSAgAAkwIAAJQCAACVAgAAkwIAAJUCAACWAgAAlwIAAJgCAACZAgAAmgIAAJsCAACcAgAAnQIAAJ4CAACfAgAAoAIAAKECAACiAgAAowIAAKQCAAClAgAApgIAAKcCAACoAgAAqQIAAKoCAACrAgAAqQIAAKsCAACsAgAArQIAAK4CAACvAgAAsAIAALECAACyAgAAsAIAALICAACzAgAAtAIAALUCAAC2AgAAtAIAALYCAAC3AgAAuAIAALkCAAC6AgAAuAIAALoCAAC7AgAAvAIAAL0CAAC+AgAAvAIAAL4CAAC/AgAAwAIAAMECAADCAgAAwAIAAMICAADDAgAAxAIAAMUCAADGAgAAxwIAAMgCAADJAgAAygIAAMsCAADMAgAAzQIAAM4CAADPAgAA0AIAANECAADSAgAA0wIAANQCAADVAgAA1gIAANcCAADYAgAA2QIAANoCAADbAgAA3AIAAN0CAADeAgAA3AIAAN4CAADfAgAA4AIAAOECAADiAgAA4wIAAOQCAADlAgAA4wIAAOUCAADmAgAA5wIAAOgCAADpAgAA5wIAAOkCAADqAgAA6wIAAOwCAADtAgAA7gIAAO8CAADwAgAA8QIAAPICAADzAgAA9AIAAPUCAAD2AgAA9wIAAPgCAAD5AgAA+gIAAPsCAAD8AgAA/QIAAP4CAAD/AgAA/QIAAP8CAAAAAwAAAQMAAAIDAAADAwAABAMAAAUDAAAGAwAABAMAAAYDAAAHAwAACAMAAAkDAAAKAwAACAMAAAoDAAALAwAADAMAAA0DAAAOAwAADAMAAA4DAAAPAwAAEAMAABEDAAASAwAAEAMAABIDAAATAwAAFAMAABUDAAAWAwAAFAMAABYDAAAXAwAAGAMAABkDAAAaAwAAGwMAABwDAAAdAwAAHgMAAB8DAAAgAwAAIQMAACIDAAAjAwAAJAMAACUDAAAmAwAAJwMAACgDAAApAwAAKgMAACsDAAAsAwAALQMAAC4DAAAvAwAAMAMAADEDAAAyAwAAMAMAADIDAAAzAwAANAMAADUDAAA2AwAANwMAADgDAAA5AwAANwMAADkDAAA6AwAAOwMAADwDAAA9AwAAOwMAAD0DAAA+AwAAPwMAAEADAABBAwAAQgMAAEMDAABEAwAARQMAAEYDAABHAwAASAMAAEkDAABKAwAASAMAAEoDAABLAwAATAMAAE0DAABOAwAATAMAAE4DAABPAwAAUAMAAFEDAABSAwAAUAMAAFIDAABTAwAAVAMAAFUDAABWAwAAVAMAAFYDAABXAwAAWAMAAFkDAABaAwAAWAMAAFoDAABbAwAAXAMAAF0DAABeAwAAXAMAAF4DAABfAwAAYAMAAGEDAABiAwAAYAMAAGIDAABjAwAAZAMAAGUDAABmAwAAZAMAAGYDAABnAwAAaAMAAGkDAABqAwAAaAMAAGoDAABrAwAAbAMAAG0DAABuAwAAbAMAAG4DAABvAwAAAVFkP2ajcz8BUWQ/x/F7PzF4aD+Xync/Yp9sP2ajcz8BUWQ/ZqNzPzF4aD+Xync/Yp9sP8fxez9in2w/ZqNzPzF4aD+Xync/MXhoP2ajcz8xeGg/x/F7P2KfbD+Xync/AVFkP2ajcz8BUWQ/ZqNzPwFRZD/H8Xs/Yp9sP5fKdz9in2w/x/F7P2KfbD9mo3M/AVFkP8fxez9in2w/l8p3PwFRZD/H8Xs/AVFkP2ajcz8BUWQ/ZqNzPwFRZD/H8Xs/MXhoP8fxez8xeGg/ZqNzP2KfbD9mo3M/AVFkP5fKdz9in2w/ZqNzP2KfbD/H8Xs/Yp9sP8fxez9in2w/ZqNzPwFRZD9mo3M/AVFkP8fxez8BUWQ/l8p3P2KfbD/H8Xs/Yp9sP8fxez9in2w/ZqNzPwFRZD+Xync/AVFkP2ajcz9in2w/l8p3PwFRZD+Xync/Yp9sP5fKdz8BUWQ/x/F7PwFRZD+Xync/AVFkP8fxez8BUWQ/ZqNzPwFRZD+Xync/AVFkP5fKdz9in2w/ZqNzP2KfbD+Xync/Yp9sP2ajcz9in2w/x/F7P2KfbD+Xync/Yp9sP8fxez8BUWQ/l8p3P2KfbD+Xync/MXhoP8fxez9in2w/ZqNzPwFRZD9mo3M/Yp9sP2ajcz9in2w/x/F7PzF4aD/H8Xs/Yp9sP2ajcz8BUWQ/x/F7P2KfbD/H8Xs/MXhoP8fxez8BUWQ/x/F7PwFRZD9mo3M/AVFkP2ajcz8xeGg/x/F7PwFRZD9mo3M/Yp9sP2ajcz9in2w/l8p3PwFRZD+Xync/Yp9sP2ajcz8xeGg/x/F7P2KfbD+Xync/MXhoP8fxez8BUWQ/l8p3P2KfbD+Xync/MXhoP8fxez8BUWQ/ZqNzPwFRZD+Xync/8npUP5bsWDzyelQ/MiA7PSOiWD9kXPE8Q8lcP5bsWDzyelQ/luxYPCOiWD9kXPE8Q8lcPzIgOz1DyVw/luxYPCOiWD9kXPE8MXhoP2ajcz8xeGg/x/F7P2KfbD+Xync/AVFkP2ajcz8BUWQ/ZqNzPwFRZD/H8Xs/Yp9sP5fKdz/QCV0/QUhaP9AJXT/w+VE/b7tUP0FIWj/QCV0/ECFWPwFRZD/H8Xs/AVFkP2ajcz8BUWQ/ZqNzPwFRZD/H8Xs/MXhoP8fxez8xeGg/ZqNzP2KfbD9mo3M/AVFkP5fKdz9in2w/ZqNzP2KfbD/H8Xs/Yp9sP8fxez9in2w/ZqNzP2+7VD/w+VE/b7tUP0FIWj9vu1Q/ECFWP9AJXT9BSFo/Yp9sP8fxez9in2w/ZqNzPwFRZD+Xync/AVFkP2ajcz9in2w/l8p3PwFRZD+Xync/0AldPxAhVj9vu1Q/QUhaP2+7VD8QIVY/AVFkP8fxez8BUWQ/ZqNzPwFRZD+Xync/AVFkP5fKdz9in2w/ZqNzP2KfbD+Xync/Yp9sP2ajcz9in2w/x/F7P2KfbD+Xync/0AldP0FIWj9vu1Q/ECFWP9AJXT8QIVY/MXhoP8fxez9in2w/ZqNzPwFRZD9mo3M/Yp9sP2ajcz9in2w/x/F7PzF4aD/H8Xs/Yp9sP2ajcz8BUWQ/x/F7P2KfbD/H8Xs/MXhoP8fxez8BUWQ/x/F7PwFRZD9mo3M/AVFkP2ajcz8xeGg/x/F7PwFRZD9mo3M/Yp9sP2ajcz9in2w/l8p3PwFRZD+Xync/Yp9sP2ajcz8xeGg/x/F7P2KfbD+Xync/oOJYP0FIWj9vu1Q/ECFWP9AJXT8QIVY/MXhoP8fxez8BUWQ/ZqNzPwFRZD+Xync/8npUP5bsWDzyelQ/MiA7PSOiWD9kXPE8Q8lcP5bsWDzyelQ/luxYPCOiWD9kXPE8Q8lcPzIgOz1DyVw/luxYPCOiWD9kXPE8MXhoP2ajcz8xeGg/x/F7P2KfbD+Xync/AVFkP2ajcz8BUWQ/ZqNzPwFRZD/H8Xs/Yp9sP5fKdz9in2w/x/F7P2KfbD9mo3M/AVFkP8fxez9in2w/l8p3PwFRZD/H8Xs/AVFkP2ajcz8BUWQ/ZqNzPwFRZD/H8Xs/MXhoP8fxez8xeGg/ZqNzP2KfbD9mo3M/AVFkP5fKdz9in2w/ZqNzP2KfbD/H8Xs/Yp9sP8fxez9in2w/ZqNzPwFRZD9mo3M/AVFkP8fxez8BUWQ/l8p3P2KfbD/H8Xs/Yp9sP8fxez9in2w/ZqNzPwFRZD+Xync/AVFkP2ajcz9in2w/l8p3PwFRZD+Xync/Yp9sP5fKdz8BUWQ/x/F7PwFRZD+Xync/AVFkP8fxez8BUWQ/ZqNzPwFRZD+Xync/AVFkP5fKdz9in2w/ZqNzP2KfbD+Xync/Yp9sP2ajcz9in2w/x/F7P2KfbD+Xync/Yp9sP8fxez8BUWQ/l8p3P2KfbD+Xync/MXhoP8fxez9in2w/ZqNzPwFRZD9mo3M/Yp9sP2ajcz9in2w/x/F7PzF4aD/H8Xs/Yp9sP2ajcz8BUWQ/x/F7P2KfbD/H8Xs/MXhoP8fxez8BUWQ/x/F7PwFRZD9mo3M/AVFkP2ajcz8xeGg/x/F7PwFRZD9mo3M/Yp9sP2ajcz9in2w/l8p3PwFRZD+Xync/Yp9sP2ajcz8xeGg/x/F7P2KfbD+Xync/MXhoP8fxez8BUWQ/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"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "Scene_-_Root",
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.6
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Object_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TEXCOORD_0": 2
+          },
+          "indices": 3,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "name": "2ab42bbff20944bea15669ab6049d3f0.obj.cleaner.materialmerger.gles"
+    },
+    {
+      "mesh": 0,
+      "name": "Object_2"
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}
+;
+      loader.parse(
+        JSON.stringify(embeddedGltf),
+        "",
         (gltf) => {
           const model = gltf.scene;
 
@@ -498,15 +3411,13 @@
 
           // 隐藏加载提示，显示开始按钮和交互提示
           document.getElementById("loading").style.display = "none";
-          document.getElementById("start-game-btn").classList.add("visible");
+          const startGameBtn = document.getElementById("start-game-btn");
+          if (startGameBtn) {
+            startGameBtn.classList.add("visible");
+          }
           document.getElementById("interaction-hint").style.display = "block";
 
           console.log("模型加载成功！");
-        },
-        (xhr) => {
-          const percent = Math.round((xhr.loaded / xhr.total) * 100);
-          document.getElementById("loading").textContent = `正在加载3D模型... ${percent}%`;
-          console.log(`正在加载3D模型... ${percent}%`);
         },
         (error) => {
           document.getElementById("loading").textContent =
@@ -514,7 +3425,6 @@
           console.error("模型加载失败：", error);
         }
       );
-
       // 4. 添加相机控制器（OrbitControls）
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
@@ -544,7 +3454,7 @@
       let wheelMoved = false;
       let hasEnteredGame = false;
       
-    //   const startBtn = document.getElementById('start-game-btn');
+      const startBtn = document.getElementById('start-game-btn');
       const previewContainer = document.getElementById('model-preview-container');
       const interactionHint = document.getElementById('interaction-hint');
       
@@ -594,9 +3504,20 @@
           }, { once: true });
         }
       });
+
+      renderer.domElement.addEventListener('touchstart', () => {
+        if (!hasEnteredGame) {
+          interactionHint.textContent = "点击下方按钮进入游戏";
+          if (startBtn) {
+            startBtn.classList.add("visible");
+          }
+        }
+      }, { passive: true });
       
       // 按钮点击也保留入口
-      startBtn.addEventListener('click', enterGame);
+      if (startBtn) {
+        startBtn.addEventListener('click', enterGame);
+      }
       
       // 进入游戏函数
       function enterGame() {
@@ -651,3 +3572,5 @@
   </body>
 
 </html>
+
+
