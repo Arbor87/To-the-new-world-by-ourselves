@@ -1404,7 +1404,7 @@ body {
 
     <!-- 黑屏元素（用于选项A点击后的效果） -->
     <div id="blackScreen" class="black-screen">
-        <p class="look-carefully">任意点击继续</p>
+        <p class="look-carefully">（凑近）仔细看一看</p>
     </div>
     
     <!-- 真结局弹窗 -->
@@ -2005,7 +2005,7 @@ function generateLightSpots() {
     document.querySelectorAll('.light-spot').forEach(spot => spot.remove());
     
     // 计算人物可触及的完整范围
-    const jumpMaxRise = 36; // 跳跃总高度(8+7+...+1)
+    const jumpMaxRise = 30; // 与跳跃弧线高度保持一致，保证光点可达
     const verticalMin = groundHeight; // 地面高度(30%)
     const verticalMax = groundHeight + jumpMaxRise; // 最大跳跃高度(66%)
     const horizontalMin = 10; // 人物可移动的左边界
@@ -2196,35 +2196,35 @@ function checkCollision() {
         }
 }
 
-    // 6. 跳跃逻辑（超级玛丽式抛物线）
+    // 6. 跳跃逻辑（平滑抛物线）
     function jump() {
         if (isJumping) return;
         
         isJumping = true;
-        jumpForce = 8; // 跳跃高度
-        
-        const jumpInterval = setInterval(() => {
-            // 上升阶段
-            if (jumpForce > 0) {
-                positionY += jumpForce;
-                jumpForce -= 1; // 重力衰减
-            } 
-            // 下降阶段
-            else if (positionY > groundHeight) {
-                positionY -= 8;
-            } 
-            // 落地
-            else {
+        jumpForce = 0;
+
+        const jumpStartTime = performance.now();
+        const jumpDuration = 620;
+        const jumpHeight = 30;
+
+        function updateJump(now) {
+            const progress = Math.min((now - jumpStartTime) / jumpDuration, 1);
+            const arc = Math.sin(Math.PI * progress);
+            positionY = groundHeight + arc * jumpHeight;
+
+            player.style.bottom = `${positionY}%`;
+            checkCollision();
+
+            if (progress < 1) {
+                requestAnimationFrame(updateJump);
+            } else {
                 positionY = groundHeight;
-                clearInterval(jumpInterval);
+                player.style.bottom = `${positionY}%`;
                 isJumping = false;
             }
-            
-            // 更新当前活动小人的位置
-            player.style.bottom = `${positionY}%`;
-            // 跳跃过程中持续检测碰撞
-            checkCollision();
-        }, 30);
+        }
+
+        requestAnimationFrame(updateJump);
     }
     
     // 7. 操控逻辑（左右移动+跳跃）
