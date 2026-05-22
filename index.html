@@ -1404,7 +1404,7 @@ body {
 
     <!-- 黑屏元素（用于选项A点击后的效果） -->
     <div id="blackScreen" class="black-screen">
-        <p class="look-carefully">（凑近）仔细看一看</p>
+        <p class="look-carefully">任意点击继续</p>
     </div>
     
     <!-- 真结局弹窗 -->
@@ -1601,13 +1601,11 @@ forestJourneyOptionB.addEventListener('click', function(e) {
 forestJourneyBackButton.addEventListener('click', function(e) {
     e.stopPropagation(); // 阻止事件冒泡
     console.log('点击了新剧情分支弹窗返回按钮');
-    // 隐藏当前弹窗
-    forestJourneyModal.classList.remove('active');
+
+    // 只回到本弹窗文字界面，不重置整个游戏流程
+    forestJourneyText.style.opacity = '1';
     forestJourneyOptions.classList.remove('active');
     forestJourneyBackButton.classList.remove('active');
-    
-    // 重置游戏状态
-    resetGame();
 });
 
 // 问题3A后续新弹窗选项B点击事件处理
@@ -1721,13 +1719,20 @@ const blackScreen = document.getElementById('blackScreen');
 const trueEndingModal = document.getElementById('trueEndingModal');
 
 if (blackScreen && trueEndingModal) {
-    blackScreen.addEventListener('click', function() {
+    function continueFromBlackScreen(e) {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
         console.log('点击了黑屏，进入真结局');
         // 隐藏黑屏
         blackScreen.classList.remove('active');
         // 显示真结局弹窗
         trueEndingModal.classList.add('active');
-    });
+    }
+
+    blackScreen.addEventListener('click', continueFromBlackScreen);
+    blackScreen.addEventListener('touchend', continueFromBlackScreen, { passive: false });
 }
 
 // 最终文字界面选项B点击事件处理
@@ -2273,7 +2278,7 @@ function checkCollision() {
     function shouldHandleGameTouch(e) {
         const target = e.target;
         const isControlTouch = target.closest && target.closest('.controls');
-        const isModalTouch = target.closest && target.closest('.quiz-modal.active, #audioPrompt, #model-preview-container');
+        const isModalTouch = target.closest && target.closest('.quiz-modal.active, #audioPrompt, #model-preview-container, #blackScreen.active');
         return (startgame.classList.contains('active') || gameContainer.classList.contains('active') || isControlTouch) && !isModalTouch;
     }
 
@@ -3050,10 +3055,10 @@ function checkCollision() {
     // 问题3A返回按钮点击事件
     question3ABackButton.addEventListener('click', function(e) {
         e.stopPropagation(); // 阻止冒泡
-        // 关闭弹窗并返回上一个界面
-        question3AModal.classList.remove('active');
-        // 可以根据需要添加返回到特定界面的逻辑
-        resetGame();
+        // 只回到本弹窗文字界面，不重置整个游戏流程
+        question3AText.style.opacity = '1';
+        question3AOptions.classList.remove('active');
+        question3ABackButton.classList.remove('active');
     });
     
     // 问题3A选项A点击事件
