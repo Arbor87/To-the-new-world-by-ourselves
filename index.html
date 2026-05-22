@@ -824,26 +824,31 @@ body {
 
 /* 仔细看一看文字样式 - 小字体，靠近底部 */
 .look-carefully {
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: max(50px, calc(env(safe-area-inset-bottom) + 50px));
     font-size: 0.9rem; /* 小字体 */
     color: rgba(255, 255, 255, 0.7); /* 半透明白色 */
-    margin-bottom: 50px; /* 距离底部有一定距离 */
+    margin: 0;
     text-align: center;
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
     animation: fadeIn 1.5s ease-in;
+    line-height: 1.6;
 }
 
 /* 响应式调整黑屏文字 */
 @media (max-width: 768px) {
     .look-carefully {
-        font-size: 0.8rem;
-        margin-bottom: 40px;
+        bottom: max(120px, calc(env(safe-area-inset-bottom) + 120px));
+        font-size: 0.85rem;
     }
 }
 
 @media (max-width: 480px) {
     .look-carefully {
-        font-size: 0.7rem;
-        margin-bottom: 30px;
+        bottom: max(18vh, calc(env(safe-area-inset-bottom) + 112px));
+        font-size: 0.8rem;
     }
 
 }
